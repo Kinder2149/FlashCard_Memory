@@ -1,0 +1,30 @@
+==== FILE: Flashcard_V1.xlsx
+  sheets: ['EN', 'Themes', 'Notice']
+  header: ('ID', 'Français', 'Anglais', 'Thème')
+    ('EN-1', 'dégingandé, grand et mince', 'lanky', '👤 Corps & Apparence')
+    ('EN-2', 'musclé, robuste', 'brawny', '👤 Corps & Apparence')
+    ('EN-3', 'se tenir', 'stand', '🏃 Actions & Verbes')
+    ('EN-4', 'mouette, goéland', 'gull', '🌿 Nature')
+    ('EN-5', 'jeter, lancer', 'fling', '🏃 Actions & Verbes')
+    ('EN-6', 'ne... plus', 'no longer', '🗣️ Expressions')
+    ('EN-7', 'gratter, fouiller', 'to paw', '🏃 Actions & Verbes')
+    ('EN-8', 'être parfaitement ajusté', 'fit snugly', '🗣️ Expressions')
+  fully filled (FR&EN): 57
+  partial rows: 0 -> []
+  themes: ['⚖️ Justice & Police', '🌿 Nature', '🏃 Actions & Verbes', '🏛️ Administration', '🏡 Objets & Matériel', '👂 Sons & Bruits', '👤 Corps & Apparence', '💼 Économie & Commerce', '📰 Médias & Communication', '🗣️ Expressions', '😊 Émotions & États']
+  Themes tab: ['Thème', '🏃 Actions & Verbes', '👤 Corps & Apparence', '😊 Émotions & États', '🌿 Nature', '👂 Sons & Bruits']
+==== FILE: Flashcard_modele.xlsx
+  sheets: ['EN', 'Themes', 'Notice']
+  header: ('ID', 'Français', 'Anglais', 'Thème')
+    ('EN-1', 'chien', 'dog', 'Animaux')
+    ('EN-2', None, None, None)
+    ('EN-3', None, None, None)
+    ('EN-4', None, None, None)
+    ('EN-5', None, None, None)
+    ('EN-6', None, None, None)
+    ('EN-7', None, None, None)
+    ('EN-8', None, None, None)
+  fully filled (FR&EN): 1
+  partial rows: 0 -> []
+  themes: ['Animaux']
+  Themes tab: ['Thème', '🏃 Actions & Verbes', '👤 Corps & Apparence', '😊 Émotions & États', '🌿 Nature', '👂 Sons & Bruits', '🏡 Objets & Matériel', '📍 Position & Déplacement', '🗣️ Expressions', '⚖️ Société & Politique', '⚖️ Justice & Police', '💼 Économie & Commerce', '🏫 Éducation', '📰 Médias & Communication', '🏛️ Administration', '🌦️ Description / Adjectifs']
