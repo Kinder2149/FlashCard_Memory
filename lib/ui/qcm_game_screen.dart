@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
-import '../models.dart';
 import '../logic/qcm_builder.dart';
 import 'recap_screen.dart';
 
@@ -145,7 +144,7 @@ class _QcmGameScreenState extends State<QcmGameScreen> {
               value: session.total == 0 ? 0 : session.position / session.total,
             ),
             const SizedBox(height: 8),
-            Text(session.direction.label,
+            Text(session.label,
                 style: const TextStyle(color: Colors.grey)),
             Expanded(
               child: SingleChildScrollView(

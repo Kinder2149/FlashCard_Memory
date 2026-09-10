@@ -6,9 +6,10 @@ import '../models.dart';
 
 /// U — Consultation du vocabulaire.
 ///
-/// Liste, en lecture seule, toutes les paires importées (Français — Anglais)
-/// groupées par thème (catégorie). Permet de parcourir l'ensemble du vocabulaire
-/// d'un coup d'œil. Un thème vide est regroupé sous « Sans thème ».
+/// Liste, en lecture seule, toutes les paires importées (langue mère — langue
+/// étrangère, toutes paires confondues) groupées par thème (catégorie).
+/// Permet de parcourir l'ensemble du vocabulaire d'un coup d'œil. Un thème
+/// vide est regroupé sous « Sans thème ».
 class VocabularyScreen extends StatelessWidget {
   const VocabularyScreen({super.key});
 
@@ -50,9 +51,10 @@ class VocabularyScreen extends StatelessWidget {
                           _ThemeSection(
                             title: theme,
                             cards: byTheme[theme]!
-                              ..sort((a, b) => a.fr.toLowerCase().compareTo(
-                                    b.fr.toLowerCase(),
-                                  )),
+                              ..sort((a, b) =>
+                                  a.motherWord.toLowerCase().compareTo(
+                                        b.motherWord.toLowerCase(),
+                                      )),
                           ),
                       ],
                     ),
@@ -111,7 +113,8 @@ class _ThemeSection extends StatelessWidget {
   }
 }
 
-/// Une paire : Français à gauche, Anglais à droite.
+/// Une paire : mot en langue mère à gauche, mot en langue étrangère à droite
+/// (avec le code de la langue, utile dès que plusieurs paires coexistent).
 class _PairRow extends StatelessWidget {
   final Flashcard card;
   const _PairRow({required this.card});
@@ -124,13 +127,15 @@ class _PairRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(card.fr,
+            child: Text(card.motherWord,
                 style: const TextStyle(fontWeight: FontWeight.w500)),
           ),
           const SizedBox(width: 12),
           const Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
           const SizedBox(width: 12),
-          Expanded(child: Text(card.en)),
+          Expanded(
+            child: Text('${card.foreignWord} (${card.foreignLang})'),
+          ),
         ],
       ),
     );

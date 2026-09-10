@@ -17,6 +17,8 @@ class SessionCard {
 class GameSession {
   final Direction direction;
   final GameMode mode;
+  final String motherLang;
+  final String foreignLang;
   final List<SessionCard> cards;
   int _index = 0;
   bool closed = false;
@@ -24,6 +26,8 @@ class GameSession {
   GameSession({
     required this.direction,
     this.mode = GameMode.typing,
+    required this.motherLang,
+    required this.foreignLang,
     required List<Flashcard> pool,
   }) : cards = pool.map(SessionCard.new).toList();
 
@@ -35,13 +39,16 @@ class GameSession {
   /// Terminée quand toutes les cartes sont passées, ou clôturée manuellement.
   bool get isFinished => closed || _index >= cards.length;
 
+  /// Libellé du sens de jeu, avec les vrais noms de langues de la session.
+  String get label => directionLabel(direction, motherLang, foreignLang);
+
   /// Mot affiché (langue source, selon le sens).
   String prompt(Flashcard c) =>
-      direction == Direction.frToEn ? c.fr : c.en;
+      direction == Direction.motherToForeign ? c.motherWord : c.foreignWord;
 
   /// Réponse attendue (langue cible, selon le sens).
   String answer(Flashcard c) =>
-      direction == Direction.frToEn ? c.en : c.fr;
+      direction == Direction.motherToForeign ? c.foreignWord : c.motherWord;
 
   /// Enregistre le résultat de la carte courante et avance.
   void answerCurrent(bool knew) {

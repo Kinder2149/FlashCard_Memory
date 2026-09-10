@@ -153,6 +153,31 @@ class _ImportScreenState extends State<ImportScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            // --- Langue mère (V2 chantier B) ---
+            _SectionCard(
+              title: 'Ma langue',
+              children: [
+                const Text(
+                  'La langue dans laquelle vous écrivez vos traductions. Elle '
+                  'sert à afficher les bons libellés partout dans l\'app.',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<String>(
+                  initialValue: app.motherLang,
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: Languages.codes
+                      .map((c) => DropdownMenuItem(
+                          value: c, child: Text(Languages.nameOf(c))))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) app.setMotherLang(v);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // --- 0. Ajouter / modifier mes cartes ---
             _SectionCard(
               title: '0. Gérer mes cartes',

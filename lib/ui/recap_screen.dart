@@ -78,7 +78,8 @@ class RecapScreen extends StatelessWidget {
                           knew ? Icons.check_circle : Icons.cancel,
                           color: knew ? Colors.green : Colors.red,
                         ),
-                        title: Text('${sc.card.fr}  —  ${sc.card.en}'),
+                        title:
+                            Text('${sc.card.motherWord}  —  ${sc.card.foreignWord}'),
                         subtitle: Text(subtitle),
                       );
                     },

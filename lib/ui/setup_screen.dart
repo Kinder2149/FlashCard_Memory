@@ -8,9 +8,9 @@ import 'qcm_game_screen.dart';
 
 /// U3 — Paramétrage de partie.
 ///
-/// Trois réglages : le mode (Saisie ou QCM), le thème (un thème précis, ou
-/// « tout ») et le sens (Français → Anglais, ou Anglais → Français).
-/// « Lancer » démarre le jeu dans le mode choisi.
+/// Quatre réglages : le mode (Saisie ou QCM), la paire de langues (V2, parmi
+/// celles disponibles en mémoire), le thème (un thème précis, ou « tout ») et
+/// le sens. « Lancer » démarre le jeu dans le mode choisi.
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
 
@@ -21,23 +21,31 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   // null = « Tous les thèmes »
   String? _theme;
-  Direction _direction = Direction.frToEn;
+  String? _foreignLang; // initialisé au premier build (dépend des données)
+  Direction _direction = Direction.motherToForeign;
   GameMode _mode = GameMode.typing;
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final pairs = app.availablePairs;
+    _foreignLang ??= pairs.isNotEmpty ? pairs.first : null;
+    final foreignLang = _foreignLang;
     final themes = app.themes;
 
     // Nombre de cartes dans le périmètre choisi (aperçu).
-    final count = _theme == null
-        ? app.memoryCount
-        : app.cards.where((c) => c.theme == _theme).length;
+    final count = foreignLang == null
+        ? 0
+        : app.cards
+            .where((c) => c.foreignLang.toUpperCase() == foreignLang)
+            .where((c) => _theme == null || c.theme == _theme)
+            .length;
 
-    // Le QCM exige 4 mots exploitables (dépend du sens choisi). Indisponible
-    // si la paire entière est trop pauvre.
-    final qcmUnavailable =
-        _mode == GameMode.qcm && !app.isQcmAvailable(_direction);
+    // Le QCM exige 4 mots exploitables (dépend du sens choisi et de la paire).
+    // Indisponible si la paire entière est trop pauvre.
+    final qcmUnavailable = foreignLang == null ||
+        (_mode == GameMode.qcm &&
+            !app.isQcmAvailable(_direction, foreignLang));
     final canLaunch = count > 0 && !qcmUnavailable;
 
     return Scaffold(
@@ -58,6 +66,26 @@ class _SetupScreenState extends State<SetupScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 24),
+            const Text('Paire de langues',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (pairs.isEmpty)
+              const Text('Aucune paire disponible : importez ou ajoutez des cartes.',
+                  style: TextStyle(color: Colors.red))
+            else
+              DropdownButtonFormField<String>(
+                initialValue: foreignLang,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                items: pairs
+                    .map((p) => DropdownMenuItem<String>(
+                          value: p,
+                          child: Text(
+                              '${Languages.nameOf(app.motherLang)} ↔ ${Languages.nameOf(p)}'),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _foreignLang = v),
+              ),
             const SizedBox(height: 24),
             const Text('Thème', style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
@@ -84,8 +112,10 @@ class _SetupScreenState extends State<SetupScreen> {
               onChanged: (v) => setState(() => _direction = v!),
               child: Column(
                 children: [
-                  _directionTile(Direction.frToEn),
-                  _directionTile(Direction.enToFr),
+                  _directionTile(Direction.motherToForeign, app.motherLang,
+                      foreignLang),
+                  _directionTile(Direction.foreignToMother, app.motherLang,
+                      foreignLang),
                 ],
               ),
             ),
@@ -129,16 +159,21 @@ class _SetupScreenState extends State<SetupScreen> {
     );
   }
 
-  Widget _directionTile(Direction d) {
+  Widget _directionTile(Direction d, String motherLang, String? foreignLang) {
     return RadioListTile<Direction>(
       value: d,
-      title: Text(d.label),
+      title: Text(foreignLang == null
+          ? '—'
+          : directionLabel(d, motherLang, foreignLang)),
       contentPadding: EdgeInsets.zero,
     );
   }
 
   void _launch(BuildContext context) {
+    final foreignLang = _foreignLang;
+    if (foreignLang == null) return;
     final ok = context.read<AppState>().startSession(
+          foreignLang: foreignLang,
           theme: _theme,
           direction: _direction,
           mode: _mode,

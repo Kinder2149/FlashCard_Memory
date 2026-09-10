@@ -48,8 +48,8 @@ Déclenché par des retours utilisateurs post-publication. Plan détaillé (miss
 - **C. Identité visuelle & organisation en blocs** — indépendant, appliqué en dernier sur tous les écrans (y compris ceux créés en A/B).
 - **D. Écran d'accueil pédagogique au premier lancement** — indépendant, rapide.
 
-Points ouverts à trancher avant codage (ne pas supposer) :
-- B1 : format de la colonne « langue » dans le modèle Excel et définition exacte d'une « paire ».
+Décisions actées (chantier B) :
+- **B1** : la langue mère est un **réglage unique de l'app** (pas un champ par carte — on suppose un seul apprenant, donc une seule langue mère), réglable dans « Gestion des données ». Le modèle Excel gagne une colonne **E « Langue »** = code ISO de la langue étrangère de la ligne (ex. `EN`, `ES`, `DE`) ; vide = `EN` par défaut, pour rester compatible avec les fichiers V1 sans cette colonne. Une **paire** = (langue mère globale, valeur de la colonne Langue). L'app trie automatiquement les cartes par paire (`AppState.availablePairs`) et le paramétrage de partie propose de choisir parmi les paires disponibles avant le thème et le sens.
 
 Décisions actées (chantier A) :
 - **A2** : une carte créée dans l'app reçoit un ID dans l'espace réservé `APP-n` (auto-incrément), distinct de l'espace des ID importés (`EN-42`…) — aucune collision possible avec un futur import.

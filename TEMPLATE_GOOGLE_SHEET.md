@@ -1,17 +1,18 @@
-# Flashcard — Template Google Sheet (V1)
+# Flashcard — Template Google Sheet
 
 ## Structure de l'onglet
-Un seul onglet en V1. Il est nommé par un **code fixe**, pas un nom décoratif : ce code sert à composer les ID, donc le renommer désynchroniserait toutes les cartes.
-- Nom d'onglet : `EN` (paire Français / Anglais).
+Un seul onglet. Il est nommé par un **code fixe**, pas un nom décoratif : ce code sert à composer les ID, donc le renommer désynchroniserait toutes les cartes.
+- Nom d'onglet : `EN` (nom hérité de la V1, conservé même si la colonne Langue permet maintenant d'y mettre d'autres langues — voir plus bas).
 
 Colonnes, dans cet ordre, avec en-têtes figés :
 
 | Colonne | En-tête | Contenu | Rempli par |
 |---------|---------|---------|------------|
 | A | `ID` | Identifiant figé, format `EN-1`, `EN-2`, … Pré-rempli. À ne jamais modifier ni réordonner. | Modèle |
-| B | `Français` | Le mot ou l'expression en français. | Utilisateur |
-| C | `Anglais` | La traduction en anglais. | Utilisateur |
+| B | `Français` | Le mot ou l'expression dans votre langue (langue mère, réglable dans l'app). | Utilisateur |
+| C | `Anglais` | La traduction en langue étrangère. | Utilisateur |
 | D | `Thème` | Catégorie de la carte. Optionnel. Choisi dans une liste déroulante. | Utilisateur |
+| E | `Langue` | **V2** — Code de la langue étrangère de cette ligne (ex. `EN`, `ES`, `DE`). Optionnel : laissé vide, l'app suppose l'anglais (compatibilité avec les fichiers V1). Permet de mélanger plusieurs langues dans le même fichier : l'app trie automatiquement par paire. | Utilisateur |
 
 ## Identifiants
 - La colonne A est pré-remplie avec un bloc d'ID : `EN-1` à `EN-500`.

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
-import '../models.dart';
 import 'recap_screen.dart';
 
 /// U4 — Jeu.
@@ -88,7 +87,7 @@ class _GameScreenState extends State<GameScreen> {
                   session.total == 0 ? 0 : session.position / session.total,
             ),
             const SizedBox(height: 8),
-            Text(session.direction.label,
+            Text(session.label,
                 style: const TextStyle(color: Colors.grey)),
             Expanded(
               child: Center(

@@ -21,46 +21,102 @@ extension GameModeInfo on GameMode {
 }
 
 /// Sens de jeu d'une carte.
-enum Direction { frToEn, enToFr }
+///
+/// V2 : ces deux valeurs signifient génériquement « langue mère → langue
+/// étrangère » ([motherToForeign]) et l'inverse ([foreignToMother]) — les noms
+/// FR/EN sont restés pour ne pas casser les codes déjà stockés (voir [code]),
+/// mais ne présument plus que la langue étrangère est l'anglais. Le libellé
+/// affiché se construit dynamiquement à partir des langues réelles de la
+/// carte/session (voir [directionLabel]).
+enum Direction { motherToForeign, foreignToMother }
 
 extension DirectionInfo on Direction {
-  /// Libellé affiché à l'utilisateur.
-  String get label =>
-      this == Direction.frToEn ? 'Français → Anglais' : 'Anglais → Français';
-
-  /// Code stable utilisé pour le stockage (ne pas traduire / renommer).
-  String get code => this == Direction.frToEn ? 'FR_EN' : 'EN_FR';
+  /// Code stable utilisé pour le stockage (ne pas changer : des statistiques
+  /// existantes en dépendent, y compris celles de la V1 mono-paire FR/EN).
+  String get code => this == Direction.motherToForeign ? 'FR_EN' : 'EN_FR';
 
   static Direction fromCode(String code) =>
-      code == 'EN_FR' ? Direction.enToFr : Direction.frToEn;
+      code == 'EN_FR' ? Direction.foreignToMother : Direction.motherToForeign;
 }
 
-/// Une flashcard : identité figée (id) + contenu (fr, en, thème).
+/// Libellé d'un sens de jeu à partir des langues réelles concernées.
+String directionLabel(Direction d, String motherLang, String foreignLang) {
+  final m = Languages.nameOf(motherLang);
+  final f = Languages.nameOf(foreignLang);
+  return d == Direction.motherToForeign ? '$m → $f' : '$f → $m';
+}
+
+/// Table de langues courantes (code ISO → nom affiché en français). Un code
+/// absent de la table est affiché tel quel (majuscules) plutôt que de planter
+/// — une langue non répertoriée reste utilisable, juste moins joliment nommée.
+class Languages {
+  static const Map<String, String> _names = {
+    'FR': 'Français',
+    'EN': 'Anglais',
+    'ES': 'Espagnol',
+    'DE': 'Allemand',
+    'IT': 'Italien',
+    'PT': 'Portugais',
+    'NL': 'Néerlandais',
+  };
+
+  static String nameOf(String code) =>
+      _names[code.toUpperCase()] ?? code.toUpperCase();
+
+  /// Codes proposés dans les sélecteurs (langue mère, ajout manuel d'une carte).
+  static List<String> get codes => _names.keys.toList();
+}
+
+/// Une flashcard : identité figée (id) + contenu (mot en langue mère, mot en
+/// langue étrangère, code de la langue étrangère, thème).
+///
+/// V2 : [foreignLang] remplace l'hypothèse V1 « toujours de l'anglais » —
+/// plusieurs langues étrangères peuvent coexister en mémoire ; la langue mère,
+/// elle, est un réglage unique de l'app (voir [AppState.motherLang]), pas un
+/// champ par carte : on suppose un seul apprenant, donc une seule langue mère.
 class Flashcard {
   final String id;
-  final String fr;
-  final String en;
+  final String motherWord;
+  final String foreignWord;
+  final String foreignLang; // code ISO (ex. 'EN', 'ES')
   final String theme; // '' si aucun thème
 
   const Flashcard({
     required this.id,
-    required this.fr,
-    required this.en,
+    required this.motherWord,
+    required this.foreignWord,
+    required this.foreignLang,
     required this.theme,
   });
 
-  /// Deux cartes ont le même contenu si texte FR, EN et thème sont identiques.
+  /// Deux cartes ont le même contenu si les deux mots, la langue étrangère et
+  /// le thème sont identiques.
   bool sameContentAs(Flashcard other) =>
-      fr == other.fr && en == other.en && theme == other.theme;
+      motherWord == other.motherWord &&
+      foreignWord == other.foreignWord &&
+      foreignLang == other.foreignLang &&
+      theme == other.theme;
 
-  Map<String, dynamic> toJson() => {'id': id, 'fr': fr, 'en': en, 'theme': theme};
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'motherWord': motherWord,
+        'foreignWord': foreignWord,
+        'foreignLang': foreignLang,
+        'theme': theme,
+      };
 
-  factory Flashcard.fromJson(Map<String, dynamic> j) => Flashcard(
-        id: j['id'] as String,
-        fr: j['fr'] as String,
-        en: j['en'] as String,
-        theme: (j['theme'] as String?) ?? '',
-      );
+  /// Lit aussi l'ancien format V1 (clés `fr`/`en`, toujours anglais) pour ne
+  /// pas perdre les cartes déjà en mémoire chez les utilisateurs existants.
+  factory Flashcard.fromJson(Map<String, dynamic> j) {
+    final isLegacy = j.containsKey('fr');
+    return Flashcard(
+      id: j['id'] as String,
+      motherWord: (isLegacy ? j['fr'] : j['motherWord']) as String,
+      foreignWord: (isLegacy ? j['en'] : j['foreignWord']) as String,
+      foreignLang: (j['foreignLang'] as String?) ?? 'EN',
+      theme: (j['theme'] as String?) ?? '',
+    );
+  }
 }
 
 /// Statistique cumulative d'une carte pour UN sens donné.
@@ -86,17 +142,21 @@ class DirectionStat {
       );
 }
 
-/// Ligne brute issue du CSV, colonnes déjà séparées et nettoyées (trim).
+/// Ligne brute issue du fichier importé, colonnes déjà séparées et nettoyées
+/// (trim). [foreignLang] vaut 'EN' par défaut quand la colonne Langue est
+/// absente ou vide (rétro-compatibilité avec le template V1, mono-paire FR/EN).
 class RawRow {
   final String id;
-  final String fr;
-  final String en;
+  final String motherWord;
+  final String foreignWord;
+  final String foreignLang;
   final String theme;
 
   const RawRow({
     required this.id,
-    required this.fr,
-    required this.en,
+    required this.motherWord,
+    required this.foreignWord,
+    required this.foreignLang,
     required this.theme,
   });
 }

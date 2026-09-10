@@ -7,6 +7,7 @@ import 'models.dart';
 import 'data/cards_store.dart';
 import 'data/stats_store.dart';
 import 'data/link_store.dart';
+import 'data/settings_store.dart';
 import 'data/csv_source.dart';
 import 'data/csv_parser.dart';
 import 'data/local_file_source.dart';
@@ -28,6 +29,7 @@ class AppState extends ChangeNotifier {
   final StatsStore _statsStore; // stats du mode saisie
   final StatsStore _qcmStatsStore; // stats du mode QCM (clé de stockage séparée)
   final LinkStore _linkStore;
+  final SettingsStore _settingsStore;
   final CsvSource _csvSource;
   final CsvParser _parser;
   final LocalFileSource _fileSource;
@@ -43,6 +45,7 @@ class AppState extends ChangeNotifier {
         _statsStore = StatsStore(prefs),
         _qcmStatsStore = StatsStore(prefs, key: 'stats_qcm'),
         _linkStore = LinkStore(prefs),
+        _settingsStore = SettingsStore(prefs),
         _csvSource = CsvSource(),
         _parser = CsvParser(),
         _fileSource = LocalFileSource(),
@@ -59,6 +62,7 @@ class AppState extends ChangeNotifier {
   String? _csvLink;
   ImportReport? _lastReport;
   GameSession? _session;
+  String _motherLang = SettingsStore.defaultLang;
 
   // Comparaison Accueil (meilleur effort, sans modifier la mémoire).
   HomeCheck _homeCheck = HomeCheck.idle;
@@ -85,6 +89,25 @@ class AppState extends ChangeNotifier {
     return set;
   }
 
+  /// Langue mère (réglage unique de l'app, V2 chantier B).
+  String get motherLang => _motherLang;
+
+  /// Change la langue mère. N'affecte que l'affichage : le texte déjà tapé
+  /// dans les cartes n'est jamais retraduit.
+  Future<void> setMotherLang(String code) async {
+    _motherLang = code.toUpperCase();
+    await _settingsStore.save(_motherLang);
+    notifyListeners();
+  }
+
+  /// Paires de langues disponibles (codes de langue étrangère distincts
+  /// présents en mémoire), triées. Le jeu ne propose que celles-ci.
+  List<String> get availablePairs {
+    final set = _cards.map((c) => c.foreignLang.toUpperCase()).toSet().toList();
+    set.sort();
+    return set;
+  }
+
   HomeCheck get homeCheck => _homeCheck;
   int? get sheetValidCountLive => _sheetValidCountLive;
   int? get toIntegrateLive => _toIntegrateLive;
@@ -95,6 +118,7 @@ class AppState extends ChangeNotifier {
     _stats = _statsStore.load();
     _qcmStats = _qcmStatsStore.load();
     _csvLink = _linkStore.load();
+    _motherLang = _settingsStore.load();
     notifyListeners();
   }
 
@@ -185,28 +209,41 @@ class AppState extends ChangeNotifier {
 
   /// Crée une carte directement dans l'app, hors import.
   Future<void> addCard({
-    required String fr,
-    required String en,
+    required String motherWord,
+    required String foreignWord,
+    required String foreignLang,
     required String theme,
   }) async {
     final card = Flashcard(
-        id: _nextManualId(), fr: fr.trim(), en: en.trim(), theme: theme.trim());
+      id: _nextManualId(),
+      motherWord: motherWord.trim(),
+      foreignWord: foreignWord.trim(),
+      foreignLang: foreignLang.trim().toUpperCase(),
+      theme: theme.trim(),
+    );
     _cards = [..._cards, card];
     await _cardsStore.save(_cards); // D3
     notifyListeners();
   }
 
-  /// Modifie le texte d'une carte existante (FR/EN/thème). Les statistiques
-  /// sont conservées, comme pour une correction via import.
+  /// Modifie le texte d'une carte existante. Les statistiques sont conservées,
+  /// comme pour une correction via import.
   Future<void> updateCard(
     String id, {
-    required String fr,
-    required String en,
+    required String motherWord,
+    required String foreignWord,
+    required String foreignLang,
     required String theme,
   }) async {
     _cards = _cards
         .map((c) => c.id == id
-            ? Flashcard(id: id, fr: fr.trim(), en: en.trim(), theme: theme.trim())
+            ? Flashcard(
+                id: id,
+                motherWord: motherWord.trim(),
+                foreignWord: foreignWord.trim(),
+                foreignLang: foreignLang.trim().toUpperCase(),
+                theme: theme.trim(),
+              )
             : c)
         .toList();
     await _cardsStore.save(_cards); // D3
@@ -262,35 +299,54 @@ class AppState extends ChangeNotifier {
 
   // --- Jeu ---
 
-  /// Démarre une session sur le périmètre choisi. [theme] null = tous les
-  /// thèmes. [mode] = saisie (défaut) ou QCM. Renvoie false si le périmètre ne
-  /// contient aucune carte.
+  /// Cartes de la paire de langues [foreignLang] (V2 chantier B).
+  List<Flashcard> _cardsOfPair(String foreignLang) => _cards
+      .where((c) => c.foreignLang.toUpperCase() == foreignLang.toUpperCase())
+      .toList();
+
+  /// Démarre une session sur le périmètre choisi : paire de langues, thème
+  /// ([theme] null = tous les thèmes) et sens. [mode] = saisie (défaut) ou
+  /// QCM. Renvoie false si le périmètre ne contient aucune carte.
   bool startSession({
+    required String foreignLang,
     required String? theme,
     required Direction direction,
     GameMode mode = GameMode.typing,
   }) {
-    final pool = _sessionBuilder.build(cards: _cards, theme: theme); // L3
+    final pool = _sessionBuilder.build(
+      cards: _cards,
+      foreignLang: foreignLang,
+      theme: theme,
+    ); // L3
     if (pool.isEmpty) return false;
-    _session = GameSession(direction: direction, mode: mode, pool: pool); // L4
+    _session = GameSession(
+      direction: direction,
+      mode: mode,
+      motherLang: _motherLang,
+      foreignLang: foreignLang,
+      pool: pool,
+    ); // L4
     notifyListeners();
     return true;
   }
 
-  /// Le mode QCM est-il jouable pour ce sens ? (au moins 4 mots cibles distincts
-  /// dans toute la paire, pour réunir 1 bonne réponse + 3 distracteurs).
-  bool isQcmAvailable(Direction direction) =>
-      _qcmBuilder.isAvailable(_cards, direction);
+  /// Le mode QCM est-il jouable pour ce sens, sur cette paire ? (au moins 4
+  /// mots cibles distincts dans la paire, pour réunir 1 bonne réponse + 3
+  /// distracteurs).
+  bool isQcmAvailable(Direction direction, String foreignLang) =>
+      _qcmBuilder.isAvailable(_cardsOfPair(foreignLang), direction);
 
   /// Construit les 4 options QCM de la carte courante (bonne réponse + 3
-  /// distracteurs tirés de la mémoire), dans un ordre aléatoire.
-  QcmOptions buildQcmOptions(Flashcard card, {Random? rng}) =>
-      _qcmBuilder.build(
-        card: card,
-        cards: _cards,
-        direction: _session?.direction ?? Direction.frToEn,
-        rng: rng,
-      );
+  /// distracteurs tirés de la même paire de langues), dans un ordre aléatoire.
+  QcmOptions buildQcmOptions(Flashcard card, {Random? rng}) {
+    final session = _session;
+    return _qcmBuilder.build(
+      card: card,
+      cards: session == null ? _cards : _cardsOfPair(session.foreignLang),
+      direction: session?.direction ?? Direction.motherToForeign,
+      rng: rng,
+    );
+  }
 
   /// Enregistre le choix de la carte QCM courante ([correct] = bon choix), met à
   /// jour la statistique QCM correspondante (persistée immédiatement pour

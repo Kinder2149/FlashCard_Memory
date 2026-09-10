@@ -27,7 +27,7 @@ class QcmBuilder {
 
   /// Texte cible (langue de la réponse) d'une carte selon le sens.
   String _target(Flashcard c, Direction d) =>
-      d == Direction.frToEn ? c.en : c.fr;
+      d == Direction.motherToForeign ? c.foreignWord : c.motherWord;
 
   /// Nombre de textes cibles distincts dans toute la paire, pour ce sens.
   int distinctTargetCount(List<Flashcard> cards, Direction d) => cards

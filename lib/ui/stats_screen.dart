@@ -9,8 +9,9 @@ import '../models.dart';
 /// Liste, par thème, chaque carte avec ses taux de réussite cumulatifs. Deux
 /// blocs distincts par carte : « Saisie » et « QCM » — comptabilisés séparément
 /// car la réussite est objective en QCM (bon choix) mais auto-déclarée en
-/// saisie. Chaque bloc détaille les deux sens (FR → EN, EN → FR). Un thème vide
-/// est regroupé sous « Sans thème ».
+/// saisie. Chaque bloc détaille les deux sens. Un thème vide est regroupé sous
+/// « Sans thème ». Toutes les paires de langues sont mélangées dans la liste ;
+/// la langue étrangère de chaque carte est rappelée à côté de son texte.
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
 
@@ -41,8 +42,8 @@ class StatsScreen extends StatelessWidget {
             : ListView(
                 children: themeNames.map((theme) {
                   final cards = byTheme[theme]!
-                    ..sort((a, b) => a.fr.toLowerCase().compareTo(
-                          b.fr.toLowerCase(),
+                    ..sort((a, b) => a.motherWord.toLowerCase().compareTo(
+                          b.motherWord.toLowerCase(),
                         ));
                   return ExpansionTile(
                     title: Text('$theme  (${cards.length})',
@@ -70,7 +71,9 @@ class _CardRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${card.fr}  —  ${card.en}',
+          Text(
+              '${card.motherWord}  —  ${card.foreignWord}'
+              '  (${Languages.nameOf(card.foreignLang)})',
               style: const TextStyle(fontWeight: FontWeight.w500)),
           const SizedBox(height: 8),
           _modeBlock(context, 'Saisie', qcm: false),
@@ -95,9 +98,11 @@ class _CardRow extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            Expanded(child: _rate(context, Direction.frToEn, qcm: qcm)),
+            Expanded(
+                child: _rate(context, Direction.motherToForeign, qcm: qcm)),
             const SizedBox(width: 8),
-            Expanded(child: _rate(context, Direction.enToFr, qcm: qcm)),
+            Expanded(
+                child: _rate(context, Direction.foreignToMother, qcm: qcm)),
           ],
         ),
       ],
@@ -108,7 +113,7 @@ class _CardRow extends StatelessWidget {
     final rate = qcm ? app.qcmRateOf(card.id, dir) : app.rateOf(card.id, dir);
     final attempts =
         qcm ? app.qcmAttemptsOf(card.id, dir) : app.attemptsOf(card.id, dir);
-    final label = dir == Direction.frToEn ? 'FR → EN' : 'EN → FR';
+    final label = directionLabel(dir, app.motherLang, card.foreignLang);
 
     final String value;
     final Color color;

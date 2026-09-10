@@ -17,7 +17,7 @@ void main() {
     expect(result.incompleteIds, isEmpty);
     // Un mot français avec virgule doit rester intact.
     final en1 = result.validCards.firstWhere((c) => c.id == 'EN-1');
-    expect(en1.fr, 'dégingandé, grand et mince');
+    expect(en1.motherWord, 'dégingandé, grand et mince');
     expect(en1.theme, contains('Corps'));
   });
 }

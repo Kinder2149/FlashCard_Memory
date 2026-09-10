@@ -11,8 +11,9 @@ import 'csv_source.dart' show CsvSourceException;
 /// (RawRow) que le parsing CSV. Toute la suite (validation, synchronisation,
 /// rapport) est donc partagée : le comportement est strictement identique.
 ///
-/// Colonnes attendues par position, comme le template : A=ID, B=Français,
-/// C=Anglais, D=Thème. Onglet `EN` (ou premier onglet à défaut).
+/// Colonnes attendues par position, comme le template : A=ID, B=mot langue
+/// mère, C=mot langue étrangère, D=Thème, E=Langue (V2, code ISO ; absente ou
+/// vide → 'EN' par défaut). Onglet `EN` (ou premier onglet à défaut).
 class LocalFileSource {
   List<RawRow> readRows(Uint8List bytes) {
     final Excel workbook;
@@ -46,7 +47,14 @@ class LocalFileSource {
 
       if (id.isEmpty) continue; // ligne sans identifiant : ignorée
 
-      rows.add(RawRow(id: id, fr: cell(1), en: cell(2), theme: cell(3)));
+      final lang = cell(4);
+      rows.add(RawRow(
+        id: id,
+        motherWord: cell(1),
+        foreignWord: cell(2),
+        foreignLang: lang.isEmpty ? 'EN' : lang,
+        theme: cell(3),
+      ));
     }
     return rows;
   }

@@ -21,8 +21,8 @@ class HelpScreen extends StatelessWidget {
               icon: Icons.lightbulb_outline,
               title: 'Le principe',
               paragraphs: [
-                'Flashcard vous aide à réviser du vocabulaire français / anglais '
-                    'sous forme de cartes.',
+                'Flashcard vous aide à réviser du vocabulaire dans une ou '
+                    'plusieurs langues étrangères, sous forme de cartes.',
                 'C’est vous qui écrivez vos mots et leurs traductions, dans un '
                     'Google Sheet ou dans le modèle Excel fourni. L’application '
                     'lit cette liste et fabrique une carte par correspondance.',
@@ -55,8 +55,8 @@ class HelpScreen extends StatelessWidget {
               icon: Icons.play_arrow,
               title: 'Jouer une session',
               paragraphs: [
-                'Choisissez un thème (ou « tout ») et un sens : Français → Anglais '
-                    'ou Anglais → Français.',
+                'Choisissez une paire de langues (si vous en avez importé plusieurs), '
+                    'un thème (ou « tout ») et un sens.',
                 'Les cartes défilent une par une, en ordre aléatoire, chacune une '
                     'seule fois. Le mot à traduire s’affiche ; vous pouvez taper '
                     'votre réponse dans le champ — mais ce champ est une simple '
@@ -81,9 +81,9 @@ class HelpScreen extends StatelessWidget {
               icon: Icons.bar_chart,
               title: 'Comment les statistiques sont calculées',
               paragraphs: [
-                'Chaque carte a deux taux de réussite distincts : un pour '
-                    'Français → Anglais, un pour Anglais → Français. Savoir un mot '
-                    'dans un sens n’est pas la même chose que dans l’autre.',
+                'Chaque carte a deux taux de réussite distincts, un pour chaque '
+                    'sens. Savoir un mot dans un sens n’est pas la même chose '
+                    'que dans l’autre.',
                 'Le taux est cumulatif, depuis le début : c’est le nombre de '
                     '« Je savais » divisé par le nombre total de tentatives pour ce '
                     'sens. Exemple : 3 « Je savais » sur 4 tentatives = 75 %.',
@@ -95,13 +95,16 @@ class HelpScreen extends StatelessWidget {
             ),
             _Section(
               icon: Icons.flag_outlined,
-              title: 'Cette version (V1)',
+              title: 'Ce qui n’est pas encore là',
               paragraphs: [
-                'La V1 gère une seule paire de langues : Français / Anglais.',
-                'Ne sont pas encore là (évolutions prévues) : plusieurs paires de '
-                    'langues, le choix de la taille des sessions, la priorité '
-                    'automatique aux cartes les moins réussies (révision espacée), '
-                    'et un taux qui pèse davantage vos dernières tentatives.',
+                'Plusieurs paires de langues peuvent coexister : réglez votre '
+                    'langue dans « Gestion des données », et ajoutez la colonne '
+                    '« Langue » dans votre fichier pour distinguer chaque langue '
+                    'étrangère.',
+                'Pas encore là (évolutions prévues) : le choix de la taille des '
+                    'sessions, la priorité automatique aux cartes les moins '
+                    'réussies (révision espacée), et un taux qui pèse davantage '
+                    'vos dernières tentatives.',
                 'Pour l’instant, chaque tentative compte à parts égales dans le '
                     'taux cumulatif.',
               ],

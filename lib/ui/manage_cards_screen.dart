@@ -42,7 +42,8 @@ class ManageCardsScreen extends StatelessWidget {
                   final c = cards[i];
                   return Card(
                     child: ListTile(
-                      title: Text('${c.fr} — ${c.en}'),
+                      title: Text(
+                          '${c.motherWord} — ${c.foreignWord} (${c.foreignLang})'),
                       subtitle:
                           Text(c.theme.isEmpty ? c.id : '${c.theme} · ${c.id}'),
                       trailing: Row(
@@ -76,7 +77,8 @@ class ManageCardsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Supprimer cette carte ?'),
         content: Text(
-            '« ${card.fr} — ${card.en} » et ses statistiques seront effacées.'),
+            '« ${card.motherWord} — ${card.foreignWord} » et ses statistiques '
+            'seront effacées.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
@@ -110,27 +112,29 @@ class _CardEditorDialog extends StatefulWidget {
 }
 
 class _CardEditorDialogState extends State<_CardEditorDialog> {
-  late final _frCtrl = TextEditingController(text: widget.existing?.fr ?? '');
-  late final _enCtrl = TextEditingController(text: widget.existing?.en ?? '');
+  late final _motherCtrl =
+      TextEditingController(text: widget.existing?.motherWord ?? '');
+  late final _foreignCtrl =
+      TextEditingController(text: widget.existing?.foreignWord ?? '');
   late final _themeCtrl =
       TextEditingController(text: widget.existing?.theme ?? '');
+  late String _foreignLang = widget.existing?.foreignLang ?? 'EN';
   String? _error;
   bool _busy = false;
 
   @override
   void dispose() {
-    _frCtrl.dispose();
-    _enCtrl.dispose();
+    _motherCtrl.dispose();
+    _foreignCtrl.dispose();
     _themeCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    final fr = _frCtrl.text.trim();
-    final en = _enCtrl.text.trim();
-    if (fr.isEmpty || en.isEmpty) {
-      setState(
-          () => _error = 'Les deux mots (Français et Anglais) sont obligatoires.');
+    final mother = _motherCtrl.text.trim();
+    final foreign = _foreignCtrl.text.trim();
+    if (mother.isEmpty || foreign.isEmpty) {
+      setState(() => _error = 'Les deux mots sont obligatoires.');
       return;
     }
     setState(() {
@@ -140,15 +144,24 @@ class _CardEditorDialogState extends State<_CardEditorDialog> {
     final app = context.read<AppState>();
     final theme = _themeCtrl.text.trim();
     if (widget.existing == null) {
-      await app.addCard(fr: fr, en: en, theme: theme);
+      await app.addCard(
+          motherWord: mother,
+          foreignWord: foreign,
+          foreignLang: _foreignLang,
+          theme: theme);
     } else {
-      await app.updateCard(widget.existing!.id, fr: fr, en: en, theme: theme);
+      await app.updateCard(widget.existing!.id,
+          motherWord: mother,
+          foreignWord: foreign,
+          foreignLang: _foreignLang,
+          theme: theme);
     }
     if (mounted) Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final app = context.read<AppState>();
     return AlertDialog(
       title:
           Text(widget.existing == null ? 'Ajouter une carte' : 'Modifier la carte'),
@@ -156,14 +169,26 @@ class _CardEditorDialogState extends State<_CardEditorDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-            controller: _frCtrl,
-            decoration: const InputDecoration(labelText: 'Français'),
+            controller: _motherCtrl,
+            decoration: InputDecoration(
+                labelText: 'Mot en ${Languages.nameOf(app.motherLang)}'),
             autofocus: true,
           ),
           const SizedBox(height: 8),
           TextField(
-            controller: _enCtrl,
-            decoration: const InputDecoration(labelText: 'Anglais'),
+            controller: _foreignCtrl,
+            decoration: const InputDecoration(labelText: 'Mot en langue étrangère'),
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            initialValue: _foreignLang,
+            decoration: const InputDecoration(labelText: 'Langue étrangère'),
+            items: Languages.codes
+                .where((c) => c != app.motherLang)
+                .map((c) => DropdownMenuItem(
+                    value: c, child: Text(Languages.nameOf(c))))
+                .toList(),
+            onChanged: (v) => setState(() => _foreignLang = v!),
           ),
           const SizedBox(height: 8),
           TextField(

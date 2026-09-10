@@ -1,13 +1,17 @@
 import '../models.dart';
 
-/// D2 — Parsing du CSV en lignes structurées (ID, mot FR, mot EN, thème).
+/// D2 — Parsing du CSV en lignes structurées (ID, mot langue mère, mot langue
+/// étrangère, langue, thème).
 ///
 /// Analyseur robuste : gère les champs entre guillemets (ex. un mot français
 /// contenant une virgule « dégingandé, grand et mince »), les guillemets
 /// échappés ("" à l'intérieur d'un champ), et les fins de ligne CRLF/LF.
 ///
-/// Colonnes attendues par position, selon le template : A=ID, B=Français,
-/// C=Anglais, D=Thème. La ligne d'en-tête (« ID,Français,… ») est ignorée.
+/// Colonnes attendues par position, selon le template : A=ID, B=mot langue
+/// mère, C=mot langue étrangère, D=Thème, E=Langue (V2 — code ISO de la langue
+/// étrangère, ex. EN/ES/DE ; absente ou vide → 'EN' par défaut, pour rester
+/// compatible avec le template V1 qui n'a pas cette colonne). La ligne
+/// d'en-tête est ignorée.
 class CsvParser {
   List<RawRow> parse(String content) {
     final table = _toTable(content);
@@ -30,10 +34,12 @@ class CsvParser {
       final id = cell(0);
       if (id.isEmpty) continue; // ligne sans identifiant : ignorée
 
+      final lang = cell(4);
       rows.add(RawRow(
         id: id,
-        fr: cell(1),
-        en: cell(2),
+        motherWord: cell(1),
+        foreignWord: cell(2),
+        foreignLang: lang.isEmpty ? 'EN' : lang,
         theme: cell(3),
       ));
     }
