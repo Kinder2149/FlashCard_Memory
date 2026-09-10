@@ -166,6 +166,64 @@ class AppState extends ChangeNotifier {
     return _lastReport!;
   }
 
+  // --- Gestion manuelle des cartes (A2) ---
+
+  /// Génère un ID pour une carte créée dans l'app : espace réservé « APP-n »,
+  /// distinct de l'espace des ID importés (ex. EN-42), pour ne jamais entrer
+  /// en collision avec un futur import.
+  String _nextManualId() {
+    const prefix = 'APP-';
+    var max = 0;
+    for (final c in _cards) {
+      if (c.id.startsWith(prefix)) {
+        final n = int.tryParse(c.id.substring(prefix.length));
+        if (n != null && n > max) max = n;
+      }
+    }
+    return '$prefix${max + 1}';
+  }
+
+  /// Crée une carte directement dans l'app, hors import.
+  Future<void> addCard({
+    required String fr,
+    required String en,
+    required String theme,
+  }) async {
+    final card = Flashcard(
+        id: _nextManualId(), fr: fr.trim(), en: en.trim(), theme: theme.trim());
+    _cards = [..._cards, card];
+    await _cardsStore.save(_cards); // D3
+    notifyListeners();
+  }
+
+  /// Modifie le texte d'une carte existante (FR/EN/thème). Les statistiques
+  /// sont conservées, comme pour une correction via import.
+  Future<void> updateCard(
+    String id, {
+    required String fr,
+    required String en,
+    required String theme,
+  }) async {
+    _cards = _cards
+        .map((c) => c.id == id
+            ? Flashcard(id: id, fr: fr.trim(), en: en.trim(), theme: theme.trim())
+            : c)
+        .toList();
+    await _cardsStore.save(_cards); // D3
+    notifyListeners();
+  }
+
+  /// Supprime une carte et ses statistiques (saisie + QCM).
+  Future<void> deleteCard(String id) async {
+    _cards = _cards.where((c) => c.id != id).toList();
+    _stats.remove(id);
+    _qcmStats.remove(id);
+    await _cardsStore.save(_cards); // D3
+    await _statsStore.save(_stats); // D4
+    await _qcmStatsStore.save(_qcmStats); // D4 (QCM)
+    notifyListeners();
+  }
+
   // --- Statistiques (lecture pour l'écran de consultation) ---
 
   /// Taux cumulatif (0..1) d'une carte pour un sens en **saisie**, ou null si

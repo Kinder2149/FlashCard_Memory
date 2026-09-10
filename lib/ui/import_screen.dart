@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../data/csv_source.dart';
+import 'manage_cards_screen.dart';
 
 /// U2 — Import.
 ///
@@ -152,6 +153,34 @@ class _ImportScreenState extends State<ImportScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            // --- 0. Ajouter / modifier mes cartes ---
+            _SectionCard(
+              title: '0. Gérer mes cartes',
+              children: [
+                Text(
+                  app.hasCards
+                      ? '${app.memoryCount} carte(s) en mémoire. Ajoutez, '
+                          'modifiez ou supprimez une carte directement, sans '
+                          'passer par un fichier.'
+                      : 'Ajoutez une première carte directement, ou importez '
+                          'depuis un Sheet ou un fichier Excel ci-dessous.',
+                  style: const TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => const ManageCardsScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('Voir / ajouter mes cartes'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
             // --- 1. Télécharger le modèle ---
             _SectionCard(
               title: '1. Partir du modèle',
