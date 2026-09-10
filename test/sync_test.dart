@@ -145,5 +145,28 @@ void main() {
       expect(out.cards.map((c) => c.id), ['EN-1']);
       expect(out.stats.containsKey('EN-2'), isFalse);
     });
+
+    test(
+        'V2 A4 : carte créée manuellement (APP-n) jamais supprimée par un import',
+        () {
+      final existing = [
+        const Flashcard(id: 'EN-1', fr: 'chat', en: 'cat', theme: ''),
+        const Flashcard(id: 'APP-1', fr: 'ordinateur', en: 'computer', theme: ''),
+      ];
+      final stats = {
+        'APP-1': {Direction.frToEn: DirectionStat(attempts: 2, knew: 1)},
+      };
+      final out = engine.synchronize(
+        memory: existing,
+        stats: stats,
+        validSheetCards: sheet([
+          ['EN-1', 'chat', 'cat', ''],
+        ]),
+      );
+      expect(out.deleted, 0, reason: 'la carte manuelle ne compte pas comme supprimée');
+      expect(out.cards.map((c) => c.id), containsAll(['EN-1', 'APP-1']));
+      expect(out.stats['APP-1']![Direction.frToEn]!.attempts, 2,
+          reason: 'ses stats survivent aussi');
+    });
   });
 }

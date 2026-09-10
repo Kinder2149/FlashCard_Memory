@@ -19,19 +19,27 @@ class SyncOutcome {
   });
 }
 
-/// L1 — Moteur de synchronisation (diff Sheet ↔ mémoire).
+/// L1 — Moteur de synchronisation (diff fichier importé ↔ mémoire).
 ///
-/// Prend l'état exact des cartes valides du Sheet et cale la mémoire dessus,
-/// ID par ID (spec) :
+/// Prend l'état exact des cartes valides du fichier importé (Sheet ou Excel)
+/// et cale la mémoire dessus, ID par ID (spec V1) :
 /// - ID valide absent de la mémoire      → carte intégrée (ajout)
 /// - ID des deux côtés, contenu identique → inchangé
 /// - ID des deux côtés, contenu différent → texte mis à jour, stats conservées
-/// - ID en mémoire, absent du Sheet valide → carte supprimée + stats supprimées
+/// - ID en mémoire, absent du fichier     → carte supprimée + stats supprimées
 ///
-/// Après synchronisation, la mémoire reflète exactement les cartes valides du
-/// Sheet. Les statistiques ne sont jamais perdues lors d'une simple correction
-/// de texte (même ID).
+/// **V2 (A4)** : depuis que l'app permet de créer des cartes directement
+/// ([manualIdPrefix]), la dernière règle ne s'applique plus à elles — aucun
+/// fichier ne contiendra jamais leur ID, donc les supprimer au premier import
+/// effacerait systématiquement tout ajout manuel. Une carte manuelle n'est
+/// donc jamais supprimée par une synchronisation ; sa suppression reste un
+/// geste volontaire (écran « Mes cartes »). Les cartes venant d'un import
+/// précédent gardent le comportement V1 inchangé : le fichier réimporté fait
+/// toujours foi sur son propre espace d'ID.
 class SyncEngine {
+  /// Préfixe des ID des cartes créées manuellement dans l'app (V2 A2).
+  static const manualIdPrefix = 'APP-';
+
   SyncOutcome synchronize({
     required List<Flashcard> memory,
     required Map<String, Map<Direction, DirectionStat>> stats,
@@ -45,7 +53,7 @@ class SyncEngine {
 
     var added = 0, updated = 0, unchanged = 0, deleted = 0;
 
-    // Parcours de l'état cible (le Sheet valide).
+    // Parcours de l'état cible (le fichier importé valide).
     for (final entry in sheetById.entries) {
       final id = entry.key;
       final sheetCard = entry.value;
@@ -66,9 +74,18 @@ class SyncEngine {
       }
     }
 
-    // Cartes en mémoire absentes du Sheet valide → supprimées (stats comprises).
-    for (final id in memoryById.keys) {
-      if (!sheetById.containsKey(id)) deleted++;
+    // Cartes en mémoire absentes du fichier importé :
+    // - créées manuellement (APP-n) → conservées, jamais supprimées par un import.
+    // - venant d'un import précédent → supprimées avec leurs stats (comportement V1).
+    for (final entry in memoryById.entries) {
+      final id = entry.key;
+      if (sheetById.containsKey(id)) continue;
+      if (id.startsWith(manualIdPrefix)) {
+        resultCards.add(entry.value);
+        if (stats.containsKey(id)) resultStats[id] = stats[id]!;
+      } else {
+        deleted++;
+      }
     }
 
     return SyncOutcome(

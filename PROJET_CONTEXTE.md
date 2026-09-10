@@ -49,9 +49,11 @@ Déclenché par des retours utilisateurs post-publication. Plan détaillé (miss
 - **D. Écran d'accueil pédagogique au premier lancement** — indépendant, rapide.
 
 Points ouverts à trancher avant codage (ne pas supposer) :
-- A2 : règle de génération d'ID pour une carte créée directement dans l'app (le principe V1 « ID pré-rempli dans le template » ne couvre pas ce cas).
-- A4 : résolution de conflit quand une carte est modifiée dans l'app ET dans un fichier importé (V1 n'avait pas cette notion, le Sheet écrasait toujours).
 - B1 : format de la colonne « langue » dans le modèle Excel et définition exacte d'une « paire ».
+
+Décisions actées (chantier A) :
+- **A2** : une carte créée dans l'app reçoit un ID dans l'espace réservé `APP-n` (auto-incrément), distinct de l'espace des ID importés (`EN-42`…) — aucune collision possible avec un futur import.
+- **A4** : une carte dont l'ID commence par `APP-` n'est **jamais** supprimée par une synchronisation/import, même absente du fichier — un fichier importé ne connaît par construction jamais ces ID, donc les supprimer effacerait systématiquement tout ajout manuel. Les cartes venant d'un import précédent gardent le comportement V1 inchangé (le fichier réimporté fait foi sur son propre espace d'ID, suppression comprise). Pas de vrai « conflit de contenu » possible entre app et fichier tant qu'aucun fichier ne peut porter un ID `APP-` : le cas n'a donc pas eu besoin d'arbitrage plus poussé.
 
 ## Décisions structurantes figées
 - Identité d'une carte = un ID figé, pré-rempli dans le template, composé d'un code d'onglet + un numéro (ex. `EN-42`). Permet de corriger une faute de frappe sans perdre les statistiques.
