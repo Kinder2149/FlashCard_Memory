@@ -8,7 +8,11 @@ Jeu mobile de flashcards pour réviser du vocabulaire. L'utilisateur saisit ses 
 - L'application lit le Sheet, elle n'écrit jamais dedans. Elle garde les cartes et les statistiques en local.
 - À chaque mise à jour, l'application se cale sur l'état exact du Sheet.
 
-## Périmètre V1
+## Statut
+
+**V1 publiée sur le Play Store (2026-09).** Retours utilisateurs post-publication réceptionnés le 2026-09-10 → ouverture de la **V2** (voir section dédiée ci-dessous). La V1 reste la référence pour tout ce qui n'est pas explicitement changé en V2.
+
+## Périmètre V1 (figé, historique)
 
 Inclus :
 - Un seul onglet de langues : Français / Anglais.
@@ -27,12 +31,27 @@ Inclus :
 - Page d'aide « Comment ça marche ? » (U7, ajout 2026-07-28) accessible depuis
   l'accueil, avec un easter egg discret en pied de page.
 
-Exclus de la V1 — évolutions prévues, à ne pas construire ni préparer maintenant :
-- Plusieurs paires de langues / plusieurs onglets.
-- Script Google Apps Script (point d'accès unique à tous les onglets, écriture dans le Sheet, automatisation de la publication CSV).
-- Choix du format de session (tout / thème entier / paquet de taille fixe).
-- Répétition espacée (priorisation des cartes les moins réussies).
-- Taux de réussite pondéré sur les dernières tentatives.
+Exclus de la V1 (certains levés en V2, voir plus bas) :
+- ~~Plusieurs paires de langues / plusieurs onglets.~~ → **levé, en cours en V2 (chantier B)**.
+- Script Google Apps Script (point d'accès unique à tous les onglets, écriture dans le Sheet, automatisation de la publication CSV). Toujours exclu.
+- Choix du format de session (tout / thème entier / paquet de taille fixe). Toujours exclu.
+- Répétition espacée (priorisation des cartes les moins réussies). Toujours exclu.
+- Taux de réussite pondéré sur les dernières tentatives. Toujours exclu.
+
+## Périmètre V2 (en cours, 2026-09-10)
+
+Déclenché par des retours utilisateurs post-publication. Plan détaillé (missions, tests manuels) tenu en session Claude Code, pas dupliqué ici — ce fichier trace les décisions structurantes actées.
+
+4 chantiers, séquencés A → B → D → C :
+- **A. Base de données mère dans l'app** — inverse la source de vérité (voir « Décisions structurantes » ci-dessous, rupture avec la V1).
+- **B. Multi-langues** — paires de langues source/cible dynamiques, dépend de A.
+- **C. Identité visuelle & organisation en blocs** — indépendant, appliqué en dernier sur tous les écrans (y compris ceux créés en A/B).
+- **D. Écran d'accueil pédagogique au premier lancement** — indépendant, rapide.
+
+Points ouverts à trancher avant codage (ne pas supposer) :
+- A2 : règle de génération d'ID pour une carte créée directement dans l'app (le principe V1 « ID pré-rempli dans le template » ne couvre pas ce cas).
+- A4 : résolution de conflit quand une carte est modifiée dans l'app ET dans un fichier importé (V1 n'avait pas cette notion, le Sheet écrasait toujours).
+- B1 : format de la colonne « langue » dans le modèle Excel et définition exacte d'une « paire ».
 
 ## Décisions structurantes figées
 - Identité d'une carte = un ID figé, pré-rempli dans le template, composé d'un code d'onglet + un numéro (ex. `EN-42`). Permet de corriger une faute de frappe sans perdre les statistiques.
@@ -46,6 +65,12 @@ Exclus de la V1 — évolutions prévues, à ne pas construire ni préparer main
   validation, la même synchronisation et le même rapport. Le modèle Excel est
   embarqué dans l'app et téléchargeable. Le fichier local n'est pas mémorisé :
   après chaque modification, le testeur le réimporte.
+- **V2 (2026-09-10, décision Kinder) — inversion de la source de vérité** : à
+  partir du chantier A, l'application devient la base mère (CRUD possible
+  directement dans l'app), et le Sheet/Excel devient un canal d'import/export
+  parmi d'autres — remplace la règle V1 « le Sheet est en lecture seule côté
+  application ». Détail des règles de fusion/conflit : point ouvert A4
+  ci-dessus, à trancher avant codage de A4.
 
 ## Contraintes de conception
 - Architecture 3 couches uniquement : UI / Logique / Données.

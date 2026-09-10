@@ -147,7 +147,7 @@ class _ImportScreenState extends State<ImportScreen> {
     final hasLink = app.hasLink;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Importer / mettre à jour')),
+      appBar: AppBar(title: const Text('Gestion des données')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),

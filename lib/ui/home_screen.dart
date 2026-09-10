@@ -95,9 +95,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                label: Text(app.hasLink
-                    ? 'Importer / mettre à jour'
-                    : 'Importer mes cartes'),
+                label: Text(
+                    app.hasLink ? 'Gestion des données' : 'Importer mes cartes'),
               ),
               const SizedBox(height: 12),
               OutlinedButton.icon(
