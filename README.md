@@ -1,17 +1,26 @@
-# flashcard_memory
+# Flashcard Memory
 
-A new Flutter project.
+Application mobile (Android, Flutter) de révision de vocabulaire par flashcards.
+Publiée sur le Play Store. En développement V2 (multi-langues, base de
+données mère dans l'app, gestion manuelle des cartes).
 
-## Getting Started
+## Documentation du projet
 
-This project is a starting point for a Flutter application.
+- [`PROJET_CONTEXTE.md`](PROJET_CONTEXTE.md) — vision, périmètre, décisions
+  structurantes figées (V1 et V2).
+- [`SPEC_FONCTIONNELLE.md`](SPEC_FONCTIONNELLE.md) — spécification
+  fonctionnelle détaillée de la V1 (écrans, synchronisation, statistiques).
+- [`TEMPLATE_GOOGLE_SHEET.md`](TEMPLATE_GOOGLE_SHEET.md) — structure du
+  modèle Excel / Google Sheet attendu par l'app.
 
-A few resources to get you started if this is your first Flutter project:
+## Développement
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --release
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Stack : Flutter + Dart, état via Provider, stockage local via
+`shared_preferences`. Cible Android uniquement.

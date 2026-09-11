@@ -203,7 +203,8 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
               icon: Icons.folder_open,
               color: scheme.secondaryContainer,
               title: 'Fichier Excel',
-              subtitle: 'Importez un .xlsx déjà rempli sur l\'appareil.',
+              subtitle: 'Ajoute les nouveaux mots d\'un .xlsx rempli — n\'écrase '
+                  'et ne supprime jamais rien.',
               selected: _selected == _Method.file,
               onTap: () => _select(_Method.file),
             ),
@@ -361,8 +362,10 @@ class _FilePanel extends StatelessWidget {
           children: [
             const Text(
               'Choisissez le fichier Excel (.xlsx) rempli, présent sur votre '
-              'appareil. Après chaque modification du fichier, réimportez-le '
-              'pour mettre la mémoire à jour.',
+              'appareil. Chaque nouveau mot est ajouté à votre base ; un mot '
+              'déjà connu est ignoré (jamais écrasé ni supprimé). Pour corriger '
+              'ou retirer une carte déjà importée, faites-le directement dans '
+              '« Mes cartes ».',
               style: TextStyle(fontSize: 13),
             ),
             const SizedBox(height: 10),

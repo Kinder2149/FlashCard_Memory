@@ -35,20 +35,21 @@ class HelpScreen extends StatelessWidget {
               icon: Icons.sync,
               title: 'Importer et mettre à jour ses cartes',
               paragraphs: [
-                'Deux façons d’importer, au choix :',
-                '• Un fichier Excel (.xlsx) : téléchargez le modèle, remplissez-le '
-                    'dans Sheets ou Excel, puis importez-le depuis l’appareil.',
-                '• Un lien Google Sheet : réglez le partage de votre Sheet sur '
-                    '« Tous les utilisateurs disposant du lien » (Lecteur), collez '
-                    'le lien une fois, il est mémorisé, ensuite « Mettre à jour » '
-                    'le relit tout seul.',
-                'À chaque import, l’application se cale exactement sur votre liste '
-                    'et vous montre un rapport : cartes ajoutées, mises à jour, '
-                    'supprimées, lignes incomplètes ignorées et doublons repérés.',
-                'Corriger une faute dans une carte ne fait pas perdre ses '
-                    'statistiques : c’est l’identifiant de la ligne (par ex. EN-42) '
-                    'qui fait le lien, pas le texte. Supprimez une ligne de votre '
-                    'liste et la carte disparaît de la mémoire au prochain import.',
+                'Deux façons d’importer, avec un fonctionnement différent :',
+                '• Un fichier Excel (.xlsx) : téléchargez le modèle, remplissez-le, '
+                    'puis importez-le. Chaque mot nouveau est ajouté à votre '
+                    'base ; un mot déjà connu est ignoré. Rien n’est jamais écrasé '
+                    'ni supprimé par cette voie, même en important plusieurs '
+                    'fichiers différents à la suite.',
+                '• Un lien Google Sheet : réglez le partage sur « Tous les '
+                    'utilisateurs disposant du lien » (Lecteur), collez le lien '
+                    'une fois, il est mémorisé. Ce Sheet est votre document unique '
+                    'et continu : « Mettre à jour » cale la mémoire exactement '
+                    'dessus — corriger une faute dans une ligne corrige la carte '
+                    'sans perdre ses statistiques (l’identifiant, ex. EN-42, fait '
+                    'le lien), et supprimer une ligne supprime la carte.',
+                'Pour corriger ou supprimer une carte ajoutée via un fichier ou '
+                    'manuellement, faites-le directement dans « Mes cartes ».',
               ],
             ),
             _Section(
