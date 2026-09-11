@@ -161,6 +161,21 @@ class RawRow {
   });
 }
 
+/// Aperçu d'un fichier lu et validé, avant toute décision de l'utilisateur
+/// (V2 A6) : ne modifie pas la mémoire. Permet d'afficher ce que contient le
+/// fichier et de choisir ensuite entre ajouter à la base ou la remplacer.
+class ImportPreview {
+  final List<Flashcard> validCards;
+  final List<String> incompleteIds;
+  final List<String> duplicateIds;
+
+  const ImportPreview({
+    required this.validCards,
+    required this.incompleteIds,
+    required this.duplicateIds,
+  });
+}
+
 /// Résultat d'un import : ce qui sera montré dans le rapport d'import.
 class ImportReport {
   final int added;

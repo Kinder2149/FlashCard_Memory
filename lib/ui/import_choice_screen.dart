@@ -10,6 +10,9 @@ import '../data/export_source.dart';
 
 enum _Method { model, file, link }
 
+/// Choix de l'utilisateur dans la fenêtre d'aperçu (V2 A6).
+enum _ImportChoice { add, replace }
+
 /// Importations — choix de la méthode d'import.
 ///
 /// Présente d'abord les 3 méthodes comme un choix explicite (cartes), puis
@@ -115,6 +118,11 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
     }
   }
 
+  /// V2 A6 — Choisit un fichier, l'analyse SANS toucher à la mémoire, puis
+  /// affiche une fenêtre d'aperçu qui demande explicitement : ajouter à la
+  /// base, ou la remplacer entièrement. Corrige le double problème signalé :
+  /// le rapport d'import invisible en bas de page, et l'absence de choix
+  /// explicite entre ajout et remplacement.
   Future<void> _importFromFile() async {
     final app = context.read<AppState>();
     final FilePickerResult? picked;
@@ -136,7 +144,87 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
       setState(() => _error = 'Le fichier choisi n\'a pas pu être lu.');
       return;
     }
-    await _runImport(() => app.importFromXlsxBytes(bytes));
+
+    setState(() {
+      _error = null;
+      _info = null;
+    });
+
+    final ImportPreview preview;
+    try {
+      preview = app.previewXlsxFile(bytes);
+    } on CsvSourceException catch (e) {
+      setState(() => _error = e.message);
+      return;
+    } catch (e) {
+      setState(() => _error = 'Lecture du fichier impossible : $e');
+      return;
+    }
+
+    if (!mounted) return;
+    final choice = await showDialog<_ImportChoice>(
+      context: context,
+      builder: (_) => _ImportPreviewDialog(
+        preview: preview,
+        currentCount: app.memoryCount,
+      ),
+    );
+    if (choice == null) return; // annulé
+
+    var replace = choice == _ImportChoice.replace;
+    if (replace) {
+      if (!mounted) return;
+      final confirmed = await _confirmReplace(context, app.memoryCount);
+      if (confirmed != true) return;
+    }
+
+    setState(() => _busy = true);
+    try {
+      final report = await app.commitXlsxPreview(preview, replace: replace);
+      if (mounted) setState(() => _info = _summarize(report, replace));
+    } catch (e) {
+      if (mounted) setState(() => _error = 'Import impossible : $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<bool?> _confirmReplace(BuildContext context, int currentCount) {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remplacer toute la base ?'),
+        content: Text(
+            'Les $currentCount carte(s) actuelles et toutes leurs statistiques '
+            'seront définitivement effacées, remplacées par le contenu de ce '
+            'fichier. Cette action est irréversible.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remplacer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _summarize(ImportReport report, bool replace) {
+    final base = replace
+        ? '${report.added} carte(s) intégrée(s) — base entièrement remplacée '
+            '(${report.deleted} ancienne(s) carte(s) effacée(s)).'
+        : '${report.added} carte(s) ajoutée(s)'
+            '${report.unchanged > 0 ? ', ${report.unchanged} déjà connue(s) ignorée(s)' : ''}.';
+    final extra = report.incompleteIds.isNotEmpty || report.duplicateIds.isNotEmpty
+        ? ' (${report.incompleteIds.length} ligne(s) incomplète(s), '
+            '${report.duplicateIds.length} doublon(s) signalé(s) dans le fichier)'
+        : '';
+    return '$base$extra';
   }
 
   @override
@@ -203,8 +291,8 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
               icon: Icons.folder_open,
               color: scheme.secondaryContainer,
               title: 'Fichier Excel',
-              subtitle: 'Ajoute les nouveaux mots d\'un .xlsx rempli — n\'écrase '
-                  'et ne supprime jamais rien.',
+              subtitle: 'Importez un .xlsx rempli — un aperçu vous laisse choisir '
+                  'ajouter ou remplacer.',
               selected: _selected == _Method.file,
               onTap: () => _select(_Method.file),
             ),
@@ -312,6 +400,119 @@ class _MethodTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Fenêtre d'aperçu (V2 A6) : ce que contient le fichier, puis le choix
+/// explicite entre ajouter à la base actuelle ou la remplacer entièrement.
+/// Remplace l'ancien rapport affiché en bas de l'écran (invisible sans faire
+/// défiler) — la décision se prend maintenant au premier plan, avant toute
+/// modification de la mémoire.
+class _ImportPreviewDialog extends StatelessWidget {
+  final ImportPreview preview;
+  final int currentCount;
+
+  const _ImportPreviewDialog({required this.preview, required this.currentCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final count = preview.validCards.length;
+
+    if (count == 0) {
+      return AlertDialog(
+        title: const Text('Aucune carte valide'),
+        content: Text(
+          preview.incompleteIds.isEmpty
+              ? 'Ce fichier ne contient aucune ligne exploitable.'
+              : 'Ce fichier ne contient aucune ligne complète '
+                  '(${preview.incompleteIds.length} ligne(s) incomplète(s) '
+                  'ignorée(s)).',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fermer'),
+          ),
+        ],
+      );
+    }
+
+    return AlertDialog(
+      title: const Text('Aperçu du fichier'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.fact_check_outlined, color: scheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '$count carte(s) valide(s) trouvée(s) dans le fichier.',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            if (preview.incompleteIds.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${preview.incompleteIds.length} ligne(s) incomplète(s) ignorée(s) '
+                '(ID : ${preview.incompleteIds.take(5).join(', ')}'
+                '${preview.incompleteIds.length > 5 ? '…' : ''}).',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+            if (preview.duplicateIds.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${preview.duplicateIds.length} doublon(s) signalé(s) dans le '
+                'fichier (conservés).',
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+            const Divider(height: 24),
+            Text(
+              'Que voulez-vous faire de ces $count carte(s) ?',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () =>
+                    Navigator.of(context).pop(_ImportChoice.add),
+                icon: const Icon(Icons.add),
+                label: Text(currentCount == 0
+                    ? 'Ajouter à ma base'
+                    : 'Ajouter à mes $currentCount carte(s) existantes'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: currentCount == 0
+                    ? null
+                    : () => Navigator.of(context).pop(_ImportChoice.replace),
+                icon: Icon(Icons.warning_amber_outlined, color: scheme.error),
+                style: OutlinedButton.styleFrom(foregroundColor: scheme.error),
+                label: const Text('Remplacer toute ma base'),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Annuler'),
+        ),
+      ],
     );
   }
 }

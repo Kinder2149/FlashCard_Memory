@@ -37,10 +37,12 @@ class HelpScreen extends StatelessWidget {
               paragraphs: [
                 'Deux façons d’importer, avec un fonctionnement différent :',
                 '• Un fichier Excel (.xlsx) : téléchargez le modèle, remplissez-le, '
-                    'puis importez-le. Chaque mot nouveau est ajouté à votre '
-                    'base ; un mot déjà connu est ignoré. Rien n’est jamais écrasé '
-                    'ni supprimé par cette voie, même en important plusieurs '
-                    'fichiers différents à la suite.',
+                    'puis importez-le. Un aperçu s’affiche d’abord : « Ajouter » '
+                    'intègre les mots nouveaux à votre base sans jamais rien '
+                    'écraser ni supprimer (un mot déjà connu est simplement '
+                    'ignoré) ; « Remplacer » efface toute votre base actuelle pour '
+                    'la reconstruire uniquement à partir de ce fichier — un choix '
+                    'volontaire, jamais automatique.',
                 '• Un lien Google Sheet : réglez le partage sur « Tous les '
                     'utilisateurs disposant du lien » (Lecteur), collez le lien '
                     'une fois, il est mémorisé. Ce Sheet est votre document unique '

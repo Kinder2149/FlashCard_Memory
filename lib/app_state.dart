@@ -159,37 +159,57 @@ class AppState extends ChangeNotifier {
     return _applyRows(rows);
   }
 
-  /// Import depuis un fichier Excel (.xlsx) choisi sur l'appareil (V2 A5).
-  ///
-  /// **Différent du lien Sheet** : un fichier local peut être une nouvelle
-  /// copie du modèle re-téléchargée, dont les ID recommencent à zéro et n'ont
-  /// plus de rapport avec ceux déjà en mémoire. Utiliser la synchronisation
-  /// par ID (comme le lien) écraserait des mots différents sous un même ID,
-  /// ou supprimerait tout ce qui n'est pas dans ce fichier précis — bug de
-  /// perte de données constaté après test. On fusionne donc par **contenu**,
-  /// en ajout seul : rien n'est jamais supprimé ni écrasé par cette voie (voir
-  /// [AdditiveMerge]). Aucun lien n'est mémorisé dans ce cas.
-  Future<ImportReport> importFromXlsxBytes(Uint8List bytes) async {
+  /// Lit et valide un fichier Excel (.xlsx) choisi sur l'appareil, **sans
+  /// toucher à la mémoire** (V2 A6). Permet d'afficher un aperçu — ce que le
+  /// fichier contient — avant de laisser l'utilisateur choisir entre ajouter
+  /// à la base ou la remplacer entièrement (voir [commitXlsxPreview]).
+  ImportPreview previewXlsxFile(Uint8List bytes) {
     final rows = _fileSource.readRows(bytes); // D6
     final validation = _validator.validate(rows); // L2
+    return ImportPreview(
+      validCards: validation.validCards,
+      incompleteIds: validation.incompleteIds,
+      duplicateIds: validation.duplicateIds,
+    );
+  }
+
+  /// Intègre un aperçu déjà validé (V2 A6), selon le choix de l'utilisateur :
+  /// - [replace] = false (« Ajouter ») : fusion additive dans la base
+  ///   actuelle (comportement A5) — rien n'est jamais écrasé ni supprimé.
+  /// - [replace] = true (« Remplacer ») : la base actuelle (cartes + stats,
+  ///   toutes origines confondues) est effacée avant d'intégrer le fichier —
+  ///   geste explicite et volontaire de l'utilisateur, jamais un effet de
+  ///   bord automatique d'un import.
+  Future<ImportReport> commitXlsxPreview(
+    ImportPreview preview, {
+    required bool replace,
+  }) async {
+    final previousCount = _cards.length;
+    if (replace) {
+      _cards = [];
+      _stats = {};
+      _qcmStats = {};
+    }
     final outcome = _merge.merge(
       memory: _cards,
-      importedValidCards: validation.validCards,
+      importedValidCards: preview.validCards,
     ); // L (fusion additive)
 
     _cards = outcome.cards;
     await _cardsStore.save(_cards); // D3
-    // Pas de stats à toucher : les cartes fusionnées sont soit déjà connues
-    // (ignorées), soit toutes neuves (aucune stat à perdre ou conserver).
+    if (replace) {
+      await _statsStore.save(_stats); // D4
+      await _qcmStatsStore.save(_qcmStats); // D4 (QCM)
+    }
 
     _lastReport = ImportReport(
       added: outcome.added,
       updated: 0,
-      deleted: 0,
+      deleted: replace ? previousCount : 0,
       unchanged: outcome.skipped,
-      incompleteIds: validation.incompleteIds,
-      duplicateIds: validation.duplicateIds,
-      sheetValidCount: validation.validCards.length,
+      incompleteIds: preview.incompleteIds,
+      duplicateIds: preview.duplicateIds,
+      sheetValidCount: preview.validCards.length,
     );
 
     notifyListeners();
