@@ -63,6 +63,7 @@ class AppState extends ChangeNotifier {
   ImportReport? _lastReport;
   GameSession? _session;
   String _motherLang = SettingsStore.defaultLang;
+  bool _showOnboarding = false;
 
   // Comparaison Accueil (meilleur effort, sans modifier la mémoire).
   HomeCheck _homeCheck = HomeCheck.idle;
@@ -87,6 +88,17 @@ class AppState extends ChangeNotifier {
         .toList();
     set.sort();
     return set;
+  }
+
+  /// L'écran d'accueil pédagogique doit-il être montré (V2 chantier D) ?
+  /// Vrai uniquement avant le tout premier passage dessus.
+  bool get showOnboarding => _showOnboarding;
+
+  /// Marque l'écran d'accueil pédagogique comme vu : ne réapparaît plus.
+  Future<void> completeOnboarding() async {
+    _showOnboarding = false;
+    await _settingsStore.markOnboardingSeen();
+    notifyListeners();
   }
 
   /// Langue mère (réglage unique de l'app, V2 chantier B).
@@ -119,6 +131,7 @@ class AppState extends ChangeNotifier {
     _qcmStats = _qcmStatsStore.load();
     _csvLink = _linkStore.load();
     _motherLang = _settingsStore.load();
+    _showOnboarding = !_settingsStore.hasSeenOnboarding();
     notifyListeners();
   }
 

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_state.dart';
 import 'ui/home_screen.dart';
+import 'ui/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +31,19 @@ class FlashcardApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF3F6FB0)),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
+      home: const _RootRouter(),
     );
+  }
+}
+
+/// Aiguille vers l'écran d'accueil pédagogique au tout premier lancement
+/// (V2 chantier D), sinon directement vers l'Accueil.
+class _RootRouter extends StatelessWidget {
+  const _RootRouter();
+
+  @override
+  Widget build(BuildContext context) {
+    final showOnboarding = context.watch<AppState>().showOnboarding;
+    return showOnboarding ? const OnboardingScreen() : const HomeScreen();
   }
 }

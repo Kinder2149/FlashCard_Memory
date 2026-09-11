@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsStore {
   static const _key = 'mother_lang';
   static const defaultLang = 'FR';
+  static const _onboardingKey = 'onboarding_seen';
   final SharedPreferences _prefs;
 
   SettingsStore(this._prefs);
@@ -14,4 +15,10 @@ class SettingsStore {
   String load() => _prefs.getString(_key) ?? defaultLang;
 
   Future<void> save(String code) => _prefs.setString(_key, code.toUpperCase());
+
+  /// V2 D — l'écran d'accueil pédagogique n'est montré qu'au tout premier
+  /// lancement.
+  bool hasSeenOnboarding() => _prefs.getBool(_onboardingKey) ?? false;
+
+  Future<void> markOnboardingSeen() => _prefs.setBool(_onboardingKey, true);
 }
