@@ -54,76 +54,85 @@ class _SetupScreenState extends State<SetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const Text('Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            RadioGroup<GameMode>(
-              groupValue: _mode,
-              onChanged: (v) => setState(() => _mode = v!),
-              child: Column(
-                children: [
-                  _modeTile(GameMode.typing),
-                  _modeTile(GameMode.qcm),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text('Paire de langues',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (pairs.isEmpty)
-              const Text('Aucune paire disponible : importez ou ajoutez des cartes.',
-                  style: TextStyle(color: Colors.red))
-            else
-              DropdownButtonFormField<String>(
-                initialValue: foreignLang,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: pairs
-                    .map((p) => DropdownMenuItem<String>(
-                          value: p,
-                          child: Text(
-                              '${Languages.nameOf(app.motherLang)} ↔ ${Languages.nameOf(p)}'),
-                        ))
-                    .toList(),
-                onChanged: (v) => setState(() => _foreignLang = v),
-              ),
-            const SizedBox(height: 24),
-            const Text('Thème', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String?>(
-              initialValue: _theme,
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: [
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('Tous les thèmes'),
+            _SettingBlock(
+              icon: Icons.videogame_asset_outlined,
+              title: 'Mode',
+              child: RadioGroup<GameMode>(
+                groupValue: _mode,
+                onChanged: (v) => setState(() => _mode = v!),
+                child: Column(
+                  children: [
+                    _modeTile(GameMode.typing),
+                    _modeTile(GameMode.qcm),
+                  ],
                 ),
-                ...themes.map((t) => DropdownMenuItem<String?>(
-                      value: t,
-                      child: Text(t),
-                    )),
-              ],
-              onChanged: (v) => setState(() => _theme = v),
-            ),
-            const SizedBox(height: 24),
-            const Text('Sens', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            RadioGroup<Direction>(
-              groupValue: _direction,
-              onChanged: (v) => setState(() => _direction = v!),
-              child: Column(
-                children: [
-                  _directionTile(Direction.motherToForeign, app.motherLang,
-                      foreignLang),
-                  _directionTile(Direction.foreignToMother, app.motherLang,
-                      foreignLang),
-                ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
+            _SettingBlock(
+              icon: Icons.translate,
+              title: 'Paire de langues',
+              child: pairs.isEmpty
+                  ? Text(
+                      'Aucune paire disponible : importez ou ajoutez des cartes.',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.error))
+                  : DropdownButtonFormField<String>(
+                      initialValue: foreignLang,
+                      items: pairs
+                          .map((p) => DropdownMenuItem<String>(
+                                value: p,
+                                child: Text(
+                                    '${Languages.nameOf(app.motherLang)} ↔ ${Languages.nameOf(p)}'),
+                              ))
+                          .toList(),
+                      onChanged: (v) => setState(() => _foreignLang = v),
+                    ),
+            ),
+            const SizedBox(height: 14),
+            _SettingBlock(
+              icon: Icons.category_outlined,
+              title: 'Thème',
+              child: DropdownButtonFormField<String?>(
+                initialValue: _theme,
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Tous les thèmes'),
+                  ),
+                  ...themes.map((t) => DropdownMenuItem<String?>(
+                        value: t,
+                        child: Text(t),
+                      )),
+                ],
+                onChanged: (v) => setState(() => _theme = v),
+              ),
+            ),
+            const SizedBox(height: 14),
+            _SettingBlock(
+              icon: Icons.swap_horiz,
+              title: 'Sens',
+              child: RadioGroup<Direction>(
+                groupValue: _direction,
+                onChanged: (v) => setState(() => _direction = v!),
+                child: Column(
+                  children: [
+                    _directionTile(Direction.motherToForeign, app.motherLang,
+                        foreignLang),
+                    _directionTile(Direction.foreignToMother, app.motherLang,
+                        foreignLang),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
               _statusMessage(count, qcmUnavailable),
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: canLaunch ? Colors.grey : Colors.red,
+                color: canLaunch
+                    ? Colors.grey
+                    : Theme.of(context).colorScheme.error,
               ),
             ),
             const SizedBox(height: 12),
@@ -183,6 +192,45 @@ class _SetupScreenState extends State<SetupScreen> {
         _mode == GameMode.qcm ? const QcmGameScreen() : const GameScreen();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+}
+
+/// Un bloc de réglage : icône + titre, puis le contrôle. Casse le mur de
+/// texte de l'ancien écran (mode/paire/thème/sens à la suite, sans séparation
+/// visuelle) en sections identifiables au premier coup d'œil.
+class _SettingBlock extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final Widget child;
+
+  const _SettingBlock({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(title,
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 10),
+            child,
+          ],
+        ),
+      ),
     );
   }
 }

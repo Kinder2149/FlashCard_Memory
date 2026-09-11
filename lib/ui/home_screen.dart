@@ -38,7 +38,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flashcard'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.style_rounded,
+                color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text('Flashcard'),
+          ],
+        ),
         actions: [
           IconButton(
             tooltip: 'Comment ça marche ?',
@@ -144,19 +152,24 @@ class _MemoryStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
+      color: scheme.primaryContainer,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('État de la mémoire',
-                style: TextStyle(fontSize: 13, color: Colors.grey)),
+            Text('État de la mémoire',
+                style: TextStyle(fontSize: 13, color: scheme.onPrimaryContainer)),
             const SizedBox(height: 8),
             Text(
               '${app.memoryCount} '
               '${app.memoryCount <= 1 ? "carte en mémoire" : "cartes en mémoire"}',
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: scheme.onPrimaryContainer),
             ),
             const SizedBox(height: 6),
             _comparisonLine(context),
@@ -167,17 +180,18 @@ class _MemoryStatusCard extends StatelessWidget {
   }
 
   Widget _comparisonLine(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final muted = scheme.onPrimaryContainer.withValues(alpha: 0.75);
     if (!app.hasLink) {
-      return const Text('Aucun lien mémorisé pour le moment.',
-          style: TextStyle(color: Colors.grey));
+      return Text('Aucun lien mémorisé pour le moment.',
+          style: TextStyle(color: muted));
     }
     switch (app.homeCheck) {
       case HomeCheck.checking:
-        return const Text('Vérification du Sheet…',
-            style: TextStyle(color: Colors.grey));
+        return Text('Vérification du Sheet…', style: TextStyle(color: muted));
       case HomeCheck.offline:
-        return const Text('Hors ligne — dernier état connu affiché.',
-            style: TextStyle(color: Colors.grey));
+        return Text('Hors ligne — dernier état connu affiché.',
+            style: TextStyle(color: muted));
       case HomeCheck.idle:
         return const SizedBox.shrink();
       case HomeCheck.done:
@@ -188,11 +202,10 @@ class _MemoryStatusCard extends StatelessWidget {
         if (toInt != null && toInt > 0) {
           return Text('$base — $toInt à intégrer',
               style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary,
-                  fontWeight: FontWeight.w600));
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700));
         }
-        return Text('$base — à jour',
-            style: const TextStyle(color: Colors.green));
+        return Text('$base — à jour', style: TextStyle(color: muted));
     }
   }
 }
