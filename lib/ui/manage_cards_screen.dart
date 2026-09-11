@@ -4,15 +4,30 @@ import 'package:provider/provider.dart';
 import '../app_state.dart';
 import '../models.dart';
 
-/// V2 A2 — Gestion manuelle des cartes : liste, ajout, modification,
-/// suppression directement dans l'app (sans passer par un import).
+/// V2 A2 + fusion Vocabulaire — Gestion des cartes : consultation groupée par
+/// thème (reprend l'ancien écran Vocabulaire, retiré car devenu redondant),
+/// ajout, modification et suppression directement dans l'app.
 class ManageCardsScreen extends StatelessWidget {
   const ManageCardsScreen({super.key});
+
+  static const _noTheme = 'Sans thème';
 
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
     final cards = app.cards;
+
+    final byTheme = <String, List<Flashcard>>{};
+    for (final c in cards) {
+      final key = c.theme.isEmpty ? _noTheme : c.theme;
+      byTheme.putIfAbsent(key, () => []).add(c);
+    }
+    final themeNames = byTheme.keys.toList()
+      ..sort((a, b) {
+        if (a == _noTheme) return 1;
+        if (b == _noTheme) return -1;
+        return a.compareTo(b);
+      });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Mes cartes')),
@@ -28,49 +43,39 @@ class ManageCardsScreen extends StatelessWidget {
                   padding: EdgeInsets.all(24),
                   child: Text(
                     'Aucune carte pour le moment. Ajoutez-en une, ou importez '
-                    'depuis un Sheet ou un fichier Excel.',
+                    'depuis un Sheet ou un fichier Excel (Paramètres → Importations).',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Colors.grey),
                   ),
                 ),
               )
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: cards.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, i) {
-                  final c = cards[i];
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                          '${c.motherWord} — ${c.foreignWord} (${c.foreignLang})'),
-                      subtitle:
-                          Text(c.theme.isEmpty ? c.id : '${c.theme} · ${c.id}'),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip: 'Modifier',
-                            icon: const Icon(Icons.edit_outlined),
-                            onPressed: () => _openEditor(context, existing: c),
+            : Column(
+                children: [
+                  _Summary(words: cards.length, themes: themeNames.length),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: ListView(
+                      children: [
+                        for (final theme in themeNames)
+                          _ThemeSection(
+                            title: theme,
+                            cards: byTheme[theme]!
+                              ..sort((a, b) =>
+                                  a.motherWord.toLowerCase().compareTo(
+                                        b.motherWord.toLowerCase(),
+                                      )),
                           ),
-                          IconButton(
-                            tooltip: 'Supprimer',
-                            icon: Icon(Icons.delete_outline,
-                                color: Theme.of(context).colorScheme.error),
-                            onPressed: () => _confirmDelete(context, c),
-                          ),
-                        ],
-                      ),
+                        const SizedBox(height: 80), // laisse de la place au FAB
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
       ),
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, Flashcard card) async {
+  static Future<void> _confirmDelete(BuildContext context, Flashcard card) async {
     final app = context.read<AppState>();
     final ok = await showDialog<bool>(
       context: context,
@@ -95,10 +100,86 @@ class ManageCardsScreen extends StatelessWidget {
     if (ok == true) await app.deleteCard(card.id);
   }
 
-  Future<void> _openEditor(BuildContext context, {Flashcard? existing}) {
+  static Future<void> _openEditor(BuildContext context, {Flashcard? existing}) {
     return showDialog(
       context: context,
       builder: (_) => _CardEditorDialog(existing: existing),
+    );
+  }
+}
+
+/// Bandeau récapitulatif : nombre de mots et de thèmes.
+class _Summary extends StatelessWidget {
+  final int words;
+  final int themes;
+  const _Summary({required this.words, required this.themes});
+
+  @override
+  Widget build(BuildContext context) {
+    final w = '$words ${words <= 1 ? "mot" : "mots"}';
+    final t = '$themes ${themes <= 1 ? "thème" : "thèmes"}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Text('$w · $t',
+          style: const TextStyle(color: Colors.grey, fontSize: 13)),
+    );
+  }
+}
+
+/// Une catégorie : un en-tête de thème puis ses cartes.
+class _ThemeSection extends StatelessWidget {
+  final String title;
+  final List<Flashcard> cards;
+  const _ThemeSection({required this.title, required this.cards});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          color: scheme.surfaceContainerHighest,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Text(
+            '$title  (${cards.length})',
+            style: TextStyle(fontWeight: FontWeight.w700, color: scheme.primary),
+          ),
+        ),
+        for (final c in cards) _CardRow(card: c),
+      ],
+    );
+  }
+}
+
+/// Une carte : mots + actions modifier/supprimer.
+class _CardRow extends StatelessWidget {
+  final Flashcard card;
+  const _CardRow({required this.card});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(
+          '${card.motherWord}  —  ${card.foreignWord} (${card.foreignLang})'),
+      subtitle: Text(card.id, style: const TextStyle(fontSize: 11)),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: 'Modifier',
+            icon: const Icon(Icons.edit_outlined, size: 20),
+            onPressed: () =>
+                ManageCardsScreen._openEditor(context, existing: card),
+          ),
+          IconButton(
+            tooltip: 'Supprimer',
+            icon: Icon(Icons.delete_outline,
+                size: 20, color: Theme.of(context).colorScheme.error),
+            onPressed: () => ManageCardsScreen._confirmDelete(context, card),
+          ),
+        ],
+      ),
     );
   }
 }

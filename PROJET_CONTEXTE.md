@@ -48,6 +48,8 @@ Déclenché par des retours utilisateurs post-publication. Plan détaillé (miss
 - **C. Identité visuelle & organisation en blocs** — indépendant, appliqué en dernier sur tous les écrans (y compris ceux créés en A/B).
 - **D. Écran d'accueil pédagogique au premier lancement** — indépendant, rapide.
 
+Ajustement post-retour (2026-09-11) : l'écran unique « Gestion des données » (chantier A1) et l'écran « Vocabulaire » (V1) ont été retirés — retour utilisateur : le premier manquait d'orientation (formulaires empilés au lieu d'un choix clair), le second faisait doublon avec « Mes cartes » (A2). Nouvelle structure d'Accueil : tuiles d'action (Jouer, Mes cartes — fusionne CRUD + consultation groupée par thème —, Statistiques, Paramètres). Paramètres = 3 blocs (Importations, Langue, Réinitialiser) ; Importations est un écran de choix explicite (3 méthodes en cartes) qui n'affiche le formulaire qu'une fois la méthode choisie.
+
 Décisions actées (chantier B) :
 - **B1** : la langue mère est un **réglage unique de l'app** (pas un champ par carte — on suppose un seul apprenant, donc une seule langue mère), réglable dans « Gestion des données ». Le modèle Excel gagne une colonne **E « Langue »** = code ISO de la langue étrangère de la ligne (ex. `EN`, `ES`, `DE`) ; vide = `EN` par défaut, pour rester compatible avec les fichiers V1 sans cette colonne. Une **paire** = (langue mère globale, valeur de la colonne Langue). L'app trie automatiquement les cartes par paire (`AppState.availablePairs`) et le paramétrage de partie propose de choisir parmi les paires disponibles avant le thème et le sens.
 

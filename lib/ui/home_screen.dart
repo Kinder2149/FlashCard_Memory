@@ -2,19 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
-import 'import_screen.dart';
+import 'import_choice_screen.dart';
+import 'manage_cards_screen.dart';
+import 'settings_screen.dart';
 import 'setup_screen.dart';
 import 'stats_screen.dart';
-import 'vocabulary_screen.dart';
 import 'help_screen.dart';
 
 /// U1 — Accueil.
 ///
-/// Affiche l'état de la mémoire (cartes intégrées) et, quand un lien est
-/// mémorisé et que l'appareil est en ligne, la comparaison avec le Sheet
-/// (« X en mémoire / Y dans le Sheet — Z à intégrer »). Propose les actions :
-/// Jouer, Importer / mettre à jour, Consulter le vocabulaire, Consulter les
-/// statistiques.
+/// Affiche l'état de la mémoire et propose : Jouer (mis en avant), puis Mes
+/// cartes / Statistiques / Paramètres sous forme de tuiles d'action colorées.
+/// Import direct proposé en priorité tant qu'aucune carte n'est en mémoire.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -35,14 +34,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.style_rounded,
-                color: Theme.of(context).colorScheme.primary),
+            Icon(Icons.style_rounded, color: scheme.primary),
             const SizedBox(width: 8),
             const Text('Flashcard'),
           ],
@@ -60,85 +59,126 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              _MemoryStatusCard(app: app),
-              const Spacer(),
-              FilledButton.icon(
-                onPressed: app.hasCards
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const SetupScreen()),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.play_arrow),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                label: const Text('Jouer'),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            _MemoryStatusCard(app: app),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: app.hasCards
+                  ? () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SetupScreen()),
+                      );
+                    }
+                  : null,
+              icon: const Icon(Icons.play_arrow),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                textStyle:
+                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
               ),
-              if (!app.hasCards)
-                const Padding(
-                  padding: EdgeInsets.only(top: 6),
-                  child: Text(
-                    'Ajoutez des cartes en important votre Sheet pour pouvoir jouer.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+              label: const Text('Jouer'),
+            ),
+            if (!app.hasCards) ...[
+              const SizedBox(height: 14),
+              _ActionTile(
+                icon: Icons.rocket_launch_outlined,
+                color: scheme.primaryContainer,
+                title: 'Importer mes cartes',
+                subtitle: 'Depuis un modèle, un fichier Excel ou un Google Sheet',
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ImportChoiceScreen()),
                 ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ImportScreen()),
-                  );
-                },
-                icon: const Icon(Icons.sync),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                label: Text(
-                    app.hasLink ? 'Gestion des données' : 'Importer mes cartes'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: app.hasCards
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const VocabularyScreen()),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.menu_book),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                label: const Text('Consulter le vocabulaire'),
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: app.hasCards
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (_) => const StatsScreen()),
-                        );
-                      }
-                    : null,
-                icon: const Icon(Icons.bar_chart),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                label: const Text('Consulter les statistiques'),
               ),
             ],
+            const SizedBox(height: 24),
+            _ActionTile(
+              icon: Icons.style_outlined,
+              color: scheme.secondaryContainer,
+              title: 'Mes cartes',
+              subtitle: '${app.memoryCount} carte(s) — voir, ajouter, modifier',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ManageCardsScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActionTile(
+              icon: Icons.bar_chart,
+              color: scheme.tertiaryContainer,
+              title: 'Statistiques',
+              subtitle: 'Vos taux de réussite par carte et par sens',
+              enabled: app.hasCards,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const StatsScreen()),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _ActionTile(
+              icon: Icons.settings_outlined,
+              color: scheme.surfaceContainerHighest,
+              title: 'Paramètres',
+              subtitle: 'Importations, langue, réinitialisation',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tuile d'action colorée de l'Accueil : icône dans un badge, titre, sous-titre.
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool enabled;
+
+  const _ActionTile({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Opacity(
+      opacity: enabled ? 1 : 0.5,
+      child: Card(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: enabled ? onTap : null,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Row(
+              children: [
+                CircleAvatar(backgroundColor: color, child: Icon(icon)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 2),
+                      Text(subtitle,
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: scheme.outline),
+              ],
+            ),
           ),
         ),
       ),
