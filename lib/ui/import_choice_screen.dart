@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import '../app_state.dart';
 import '../models.dart';
 import '../data/csv_source.dart';
+import '../data/export_source.dart';
 
 enum _Method { model, file, link }
 
@@ -89,6 +90,31 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
     }
   }
 
+  /// V2 A3/A5 — Exporte la base réelle de l'app (pas le modèle vierge).
+  Future<void> _exportDatabase() async {
+    setState(() {
+      _error = null;
+      _info = null;
+    });
+    try {
+      final app = context.read<AppState>();
+      final bytes = ExportSource().buildXlsx(app.cards);
+      final path = await FilePicker.platform.saveFile(
+        dialogTitle: 'Enregistrer ma base Flashcard',
+        fileName: 'Flashcard_ma_base.xlsx',
+        type: FileType.custom,
+        allowedExtensions: const ['xlsx'],
+        bytes: bytes,
+      );
+      if (path != null && mounted) {
+        setState(() => _info =
+            'Votre base (${app.memoryCount} carte(s)) a été enregistrée.');
+      }
+    } catch (e) {
+      setState(() => _error = 'Export impossible : $e');
+    }
+  }
+
   Future<void> _importFromFile() async {
     final app = context.read<AppState>();
     final FilePickerResult? picked;
@@ -125,6 +151,42 @@ class _ImportChoiceScreenState extends State<ImportChoiceScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            // --- Base actuelle (V2 A3/A5) : distincte du modèle vierge ---
+            Card(
+              color: scheme.surfaceContainerHigh,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.backup_outlined, color: scheme.primary),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text('Ma base actuelle',
+                              style: TextStyle(fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${app.memoryCount} carte(s) dans l\'app, toutes origines '
+                      'confondues (import, ajout manuel). Téléchargez-la pour la '
+                      'garder en sauvegarde — différente du modèle vierge ci-dessous.',
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: app.hasCards ? _exportDatabase : null,
+                      icon: const Icon(Icons.download),
+                      label: const Text('Télécharger ma base (.xlsx)'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
             const Text('Comment voulez-vous importer vos cartes ?',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),

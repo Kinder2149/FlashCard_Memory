@@ -188,5 +188,23 @@ void main() {
       expect(out.stats['APP-1']![Direction.motherToForeign]!.attempts, 2,
           reason: 'ses stats survivent aussi');
     });
+
+    test(
+        'V2 A5 : carte fusionnée depuis un fichier (IMP-n) aussi protégée de la suppression',
+        () {
+      final existing = [
+        const Flashcard(id: 'EN-1', motherWord: 'chat', foreignWord: 'cat', foreignLang: 'EN', theme: ''),
+        const Flashcard(id: 'IMP-1', motherWord: 'maison', foreignWord: 'house', foreignLang: 'EN', theme: ''),
+      ];
+      final out = engine.synchronize(
+        memory: existing,
+        stats: {},
+        validSheetCards: sheet([
+          ['EN-1', 'chat', 'cat', ''],
+        ]),
+      );
+      expect(out.deleted, 0);
+      expect(out.cards.map((c) => c.id), containsAll(['EN-1', 'IMP-1']));
+    });
   });
 }

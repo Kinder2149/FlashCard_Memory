@@ -29,16 +29,22 @@ class SyncOutcome {
 /// - ID en mémoire, absent du fichier     → carte supprimée + stats supprimées
 ///
 /// **V2 (A4)** : depuis que l'app permet de créer des cartes directement
-/// ([manualIdPrefix]), la dernière règle ne s'applique plus à elles — aucun
-/// fichier ne contiendra jamais leur ID, donc les supprimer au premier import
-/// effacerait systématiquement tout ajout manuel. Une carte manuelle n'est
-/// donc jamais supprimée par une synchronisation ; sa suppression reste un
-/// geste volontaire (écran « Mes cartes »). Les cartes venant d'un import
-/// précédent gardent le comportement V1 inchangé : le fichier réimporté fait
-/// toujours foi sur son propre espace d'ID.
+/// ([Flashcard.id] préfixé `APP-`) ou de les importer en fusion additive
+/// depuis un fichier local (préfixé `IMP-`, voir [AdditiveMerge]), la dernière
+/// règle ne s'applique plus à elles — aucun lien Google Sheet ne contiendra
+/// jamais leur ID, donc les supprimer à la prochaine synchronisation
+/// effacerait tout ajout manuel ou fichier. Ces cartes ne sont donc jamais
+/// supprimées par une synchronisation ; leur suppression reste un geste
+/// volontaire (écran « Mes cartes » ou « Réinitialiser »). Les cartes venant
+/// du lien Sheet lui-même gardent le comportement V1 inchangé : ce lien fait
+/// toujours foi sur son propre espace d'ID (document unique et continu, à la
+/// différence d'un fichier local qui peut être un nouveau modèle re-téléchargé).
 class SyncEngine {
-  /// Préfixe des ID des cartes créées manuellement dans l'app (V2 A2).
-  static const manualIdPrefix = 'APP-';
+  /// Préfixes des ID « possédés par l'app », jamais supprimés par une
+  /// synchronisation avec le lien Sheet : créés à la main (`APP-`, V2 A2) ou
+  /// ajoutés par fusion additive de fichier (`IMP-`, V2 A5).
+  static bool isAppOwnedId(String id) =>
+      id.startsWith('APP-') || id.startsWith('IMP-');
 
   SyncOutcome synchronize({
     required List<Flashcard> memory,
@@ -75,12 +81,12 @@ class SyncEngine {
     }
 
     // Cartes en mémoire absentes du fichier importé :
-    // - créées manuellement (APP-n) → conservées, jamais supprimées par un import.
-    // - venant d'un import précédent → supprimées avec leurs stats (comportement V1).
+    // - possédées par l'app (APP-/IMP-) → conservées, jamais supprimées.
+    // - venant du lien Sheet lui-même → supprimées avec leurs stats (comportement V1).
     for (final entry in memoryById.entries) {
       final id = entry.key;
       if (sheetById.containsKey(id)) continue;
-      if (id.startsWith(manualIdPrefix)) {
+      if (isAppOwnedId(id)) {
         resultCards.add(entry.value);
         if (stats.containsKey(id)) resultStats[id] = stats[id]!;
       } else {

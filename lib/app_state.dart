@@ -13,6 +13,7 @@ import 'data/csv_parser.dart';
 import 'data/local_file_source.dart';
 import 'logic/validation.dart';
 import 'logic/sync_engine.dart';
+import 'logic/additive_merge.dart';
 import 'logic/session_builder.dart';
 import 'logic/session_runner.dart';
 import 'logic/stats_calculator.dart';
@@ -36,6 +37,7 @@ class AppState extends ChangeNotifier {
   // Couche Logique
   final Validator _validator;
   final SyncEngine _sync;
+  final AdditiveMerge _merge;
   final SessionBuilder _sessionBuilder;
   final StatsCalculator _statsCalc;
   final QcmBuilder _qcmBuilder;
@@ -51,6 +53,7 @@ class AppState extends ChangeNotifier {
         _fileSource = LocalFileSource(),
         _validator = Validator(),
         _sync = SyncEngine(),
+        _merge = AdditiveMerge(),
         _sessionBuilder = SessionBuilder(),
         _statsCalc = StatsCalculator(),
         _qcmBuilder = QcmBuilder();
@@ -156,16 +159,47 @@ class AppState extends ChangeNotifier {
     return _applyRows(rows);
   }
 
-  /// Import depuis un fichier Excel (.xlsx) choisi sur l'appareil. Même moteur,
-  /// même rapport que l'import par lien — seule la source change (D6 au lieu de
-  /// D1/D2). Aucun lien n'est mémorisé dans ce cas.
+  /// Import depuis un fichier Excel (.xlsx) choisi sur l'appareil (V2 A5).
+  ///
+  /// **Différent du lien Sheet** : un fichier local peut être une nouvelle
+  /// copie du modèle re-téléchargée, dont les ID recommencent à zéro et n'ont
+  /// plus de rapport avec ceux déjà en mémoire. Utiliser la synchronisation
+  /// par ID (comme le lien) écraserait des mots différents sous un même ID,
+  /// ou supprimerait tout ce qui n'est pas dans ce fichier précis — bug de
+  /// perte de données constaté après test. On fusionne donc par **contenu**,
+  /// en ajout seul : rien n'est jamais supprimé ni écrasé par cette voie (voir
+  /// [AdditiveMerge]). Aucun lien n'est mémorisé dans ce cas.
   Future<ImportReport> importFromXlsxBytes(Uint8List bytes) async {
     final rows = _fileSource.readRows(bytes); // D6
-    return _applyRows(rows);
+    final validation = _validator.validate(rows); // L2
+    final outcome = _merge.merge(
+      memory: _cards,
+      importedValidCards: validation.validCards,
+    ); // L (fusion additive)
+
+    _cards = outcome.cards;
+    await _cardsStore.save(_cards); // D3
+    // Pas de stats à toucher : les cartes fusionnées sont soit déjà connues
+    // (ignorées), soit toutes neuves (aucune stat à perdre ou conserver).
+
+    _lastReport = ImportReport(
+      added: outcome.added,
+      updated: 0,
+      deleted: 0,
+      unchanged: outcome.skipped,
+      incompleteIds: validation.incompleteIds,
+      duplicateIds: validation.duplicateIds,
+      sheetValidCount: validation.validCards.length,
+    );
+
+    notifyListeners();
+    return _lastReport!;
   }
 
-  /// Tronc commun à tous les imports : validation (L2), synchronisation (L1),
-  /// persistance (D3/D4) et construction du rapport.
+  /// Tronc commun à l'import par lien Google Sheet : validation (L2),
+  /// synchronisation par ID (L1), persistance (D3/D4) et rapport. Document
+  /// unique et continu : contrairement au fichier local, l'ID y fait foi
+  /// (voir la documentation de [SyncEngine]).
   Future<ImportReport> _applyRows(List<RawRow> rows) async {
     final validation = _validator.validate(rows); // L2
     final outcome = _sync.synchronize(
