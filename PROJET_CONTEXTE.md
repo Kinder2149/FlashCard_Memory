@@ -1,5 +1,19 @@
 # Flashcard — Contexte projet
 
+## STATUT — fait foi pour les statuts (lu par Pilotage)
+
+```
+STATUT DU PROJET : En production
+MISSION : V2 (retours post-publication, 2026-09-10) — En implémentation
+  Étape : A Base de données mère dans l'app — ? — critère : ?
+  Étape : B Multi-langues — ? — critère : ?
+  Étape : D Écran d'accueil pédagogique au premier lancement — ? — critère : ?
+  Étape : C Identité visuelle et organisation en blocs — ? — critère : ?
+IDÉES PARQUÉES :
+  (aucune)
+```
+*(Bloc ajouté le 2026-10-30, validé par Kinder. Ordre prévu des chantiers : A, B, D, C.)*
+
 ## Vision
 Jeu mobile de flashcards pour réviser du vocabulaire. L'utilisateur saisit ses mots et traductions dans un Google Sheet qu'il remplit au quotidien ; l'application lit ce Sheet et génère une flashcard par correspondance. L'utilisateur joue ensuite des sessions de révision et suit son taux de réussite par carte.
 
