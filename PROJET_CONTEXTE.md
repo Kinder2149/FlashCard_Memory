@@ -5,14 +5,14 @@
 ```
 STATUT DU PROJET : En production
 MISSION : V2 (retours post-publication, 2026-09-10) — En implémentation
-  Étape : A Base de données mère dans l'app — ? — critère : ?
-  Étape : B Multi-langues — ? — critère : ?
-  Étape : D Écran d'accueil pédagogique au premier lancement — ? — critère : ?
-  Étape : C Identité visuelle et organisation en blocs — ? — critère : ?
+  Étape : A Base de données mère dans l'app — En vérification — critère : dans l'appli, j'ajoute une carte via « Mes cartes », j'importe ensuite un fichier Excel puis choisis « Ajouter » dans l'aperçu : ma carte est toujours là et les cartes du fichier s'ajoutent sans en supprimer ; « Ma base actuelle » exporte toutes mes cartes
+  Étape : B Multi-langues — En vérification — critère : après import d'un fichier avec deux langues étrangères (colonne Langue), l'écran de paramétrage d'une partie propose les deux paires et une partie ne montre que les cartes de la paire choisie
+  Étape : D Écran d'accueil pédagogique au premier lancement — En vérification — critère : au tout premier lancement (appli neuve ou données effacées) un écran d'explication s'affiche avant l'accueil ; aux lancements suivants il n'apparaît plus
+  Étape : C Identité visuelle et organisation en blocs — Planifiée — critère : sur chaque écran (Accueil, Mes cartes, Statistiques, Paramètres, Jeu), les contenus sont regroupés en blocs et la même identité visuelle (couleurs, titres, boutons) est reconnaissable d'un écran à l'autre, vérifié par captures
 IDÉES PARQUÉES :
   (aucune)
 ```
-*(Bloc ajouté le 2026-10-30, validé par Kinder. Ordre prévu des chantiers : A, B, D, C.)*
+*(Bloc ajouté le 2026-10-30, validé par Kinder. Ordre prévu des chantiers : A, B, D, C. Tri du 2026-11-10 : statuts et critères d'étapes écrits d'après le plan V2 ci-dessous ; A, B et D sont codés, validation par Kinder à confirmer.)*
 
 ## Vision
 Jeu mobile de flashcards pour réviser du vocabulaire. L'utilisateur saisit ses mots et traductions dans un Google Sheet qu'il remplit au quotidien ; l'application lit ce Sheet et génère une flashcard par correspondance. L'utilisateur joue ensuite des sessions de révision et suit son taux de réussite par carte.
